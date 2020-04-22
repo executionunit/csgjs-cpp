@@ -71,3 +71,10 @@ remove UV as not used.
     gourd intersect cyl 105220ms
     gourd subtract cyl 167227ms
     cyl subtract gourd 102725ms
+
+made some functions inline
+
+    gourd union cyl 189880ms
+    gourd intersect cyl 102021ms
+    gourd subtract cyl 155356ms
+    cyl subtract gourd 103044ms

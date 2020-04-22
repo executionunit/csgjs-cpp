@@ -1,5 +1,5 @@
-#ifndef VXMATHCSGJS_H
-#define VXMATHCSGJS_H
+#ifndef CSGJSCPP_H
+#define CSGJSCPP_H
 
 // Original CSG.JS library by Evan Wallace (http://madebyevan.com), under the MIT license.
 // GitHub: https://github.com/evanw/csg.js/
@@ -89,15 +89,15 @@ struct Plane {
 
     Plane();
     Plane(const Vector &a, const Vector &b, const Vector &c);
-    
-	inline bool ok() const {
+
+    inline bool ok() const {
         return length(this->normal) > 0.0f;
     }
 
-	inline void Plane::flip() {
-		this->normal = negate(this->normal);
-		this->w *= -1.0f;
-	}
+    inline void Plane::flip() {
+        this->normal = negate(this->normal);
+        this->w *= -1.0f;
+    }
 
     void splitpolygon(const Polygon &poly, std::vector<Polygon> &coplanarFront, std::vector<Polygon> &coplanarBack,
                       std::vector<Polygon> &front, std::vector<Polygon> &back) const;
@@ -121,10 +121,16 @@ struct Plane {
 struct Polygon {
     std::vector<Vertex> vertices;
     Plane               plane;
-    void                flip();
 
     Polygon();
     Polygon(const std::vector<Vertex> &list);
+
+	inline void Polygon::flip() {
+		std::reverse(vertices.begin(), vertices.end());
+		for (size_t i = 0; i < vertices.size(); i++)
+			vertices[i].normal = negate(vertices[i].normal);
+		plane.flip();
+	}
 };
 
 struct Model {
@@ -221,7 +227,6 @@ inline Vertex interpolate(const Vertex &a, const Vertex &b, CSGJSCPP_REAL t) {
 Plane::Plane() : normal(), w(0.0f) {
 }
 
-
 Plane::Plane(const Vector &a, const Vector &b, const Vector &c) {
     this->normal = unit(cross(b - a, c - a));
     this->w = dot(this->normal, a);
@@ -294,12 +299,6 @@ void Plane::splitpolygon(const Polygon &poly, std::vector<Polygon> &coplanarFron
 
 // Polygon implementation
 
-void Polygon::flip() {
-    std::reverse(vertices.begin(), vertices.end());
-    for (size_t i = 0; i < vertices.size(); i++)
-        vertices[i].normal = negate(vertices[i].normal);
-    plane.flip();
-}
 
 Polygon::Polygon() {
 }
@@ -722,6 +721,5 @@ std::vector<Polygon> csgsubtract(const std::vector<Polygon> &a, const std::vecto
 
 } // namespace csgjscpp
 
-#endif
-
-#endif
+#endif //defined(CSGJSCPP_IMPLEMENTATION)
+#endif //#define CSGJSCPP
