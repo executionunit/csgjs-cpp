@@ -18,6 +18,11 @@
 
 #include <vector>
 
+// `CSG.Plane.EPSILON` is the tolerance used by `splitPolygon()` to decide if a
+// point is on the plane.
+const float csgjs_EPSILON = 0.0001f;
+
+
 struct csgjs_vector {
     float x, y, z;
 
@@ -26,6 +31,43 @@ struct csgjs_vector {
     csgjs_vector(float x, float y, float z) : x(x), y(y), z(z) {
     }
 };
+
+// Vector implementation
+
+inline csgjs_vector operator+(const csgjs_vector &a, const csgjs_vector &b) {
+	return csgjs_vector(a.x + b.x, a.y + b.y, a.z + b.z);
+}
+csgjs_vector operator-(const csgjs_vector &a, const csgjs_vector &b) {
+	return csgjs_vector(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+inline csgjs_vector operator*(const csgjs_vector &a, float b) {
+	return csgjs_vector(a.x * b, a.y * b, a.z * b);
+}
+inline csgjs_vector operator/(const csgjs_vector &a, float b) {
+	return a * (1.0f / b);
+}
+inline float dot(const csgjs_vector &a, const csgjs_vector &b) {
+	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+inline csgjs_vector lerp(const csgjs_vector &a, const csgjs_vector &b, float v) {
+	return a + (b - a) * v;
+}
+inline csgjs_vector negate(const csgjs_vector &a) {
+	return a * -1.0f;
+}
+inline float length(const csgjs_vector &a) {
+	return sqrtf(dot(a, a));
+}
+inline csgjs_vector unit(const csgjs_vector &a) {
+	return a / length(a);
+}
+inline csgjs_vector cross(const csgjs_vector &a, const csgjs_vector &b) {
+	return csgjs_vector(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+}
+
+inline csgjs_vector operator-(const csgjs_vector &a) {
+	return csgjs_vector(-a.x, -a.y, -a.z);
+}
 
 struct csgjs_vector2 {
     float x, y;
@@ -36,6 +78,11 @@ struct csgjs_vector2 {
     csgjs_vector2(float x, float y) : x(x), y(y) {
     }
 };
+
+inline csgjs_vector2 lerp(const csgjs_vector2 &a, const csgjs_vector2 &b, float v) {
+	return csgjs_vector2{ a.x + (b.x - a.x) * v, a.y + (b.y - a.y) * v };
+}
+
 
 struct csgjs_vertex {
     csgjs_vector  pos;
@@ -57,6 +104,13 @@ struct csgjs_plane {
     void splitPolygon(const csgjs_polygon &polygon, std::vector<csgjs_polygon> &coplanarFront,
                       std::vector<csgjs_polygon> &coplanarBack, std::vector<csgjs_polygon> &front,
                       std::vector<csgjs_polygon> &back) const;
+
+	enum PointClassification { COPLANAR = 0, FRONT = 1, BACK = 2, SPANNING = 3 };
+	inline PointClassification classify(const csgjs_vector &p)const {
+		float t = dot(normal, p) - this->w;
+		PointClassification   c = (t < -csgjs_EPSILON) ? BACK : ((t > csgjs_EPSILON) ? FRONT : COPLANAR);
+		return c;
+	}
 };
 
 // Represents a convex polygon. The vertices used to initialize a polygon must
@@ -118,9 +172,6 @@ csgjs_model csgsmodel_cyliner(const csgjs_vector &s = {0.0f, -1.0f, 0.0f}, const
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-// `CSG.Plane.EPSILON` is the tolerance used by `splitPolygon()` to decide if a
-// point is on the plane.
-static const float csgjs_EPSILON = 0.0001f;
 
 // Holds a node in a BSP tree. A BSP tree is built from a collection of polygons
 // by picking a polygon to split along. That polygon (and all other coplanar
@@ -144,46 +195,6 @@ struct csgjs_csgnode {
     std::vector<csgjs_polygon> clipPolygons(const std::vector<csgjs_polygon> &list) const;
     std::vector<csgjs_polygon> allPolygons() const;
 };
-
-// Vector implementation
-
-inline csgjs_vector operator+(const csgjs_vector &a, const csgjs_vector &b) {
-    return csgjs_vector(a.x + b.x, a.y + b.y, a.z + b.z);
-}
-csgjs_vector operator-(const csgjs_vector &a, const csgjs_vector &b) {
-    return csgjs_vector(a.x - b.x, a.y - b.y, a.z - b.z);
-}
-inline csgjs_vector operator*(const csgjs_vector &a, float b) {
-    return csgjs_vector(a.x * b, a.y * b, a.z * b);
-}
-inline csgjs_vector operator/(const csgjs_vector &a, float b) {
-    return a * (1.0f / b);
-}
-inline float dot(const csgjs_vector &a, const csgjs_vector &b) {
-    return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-inline csgjs_vector lerp(const csgjs_vector &a, const csgjs_vector &b, float v) {
-    return a + (b - a) * v;
-}
-inline csgjs_vector2 lerp(const csgjs_vector2 &a, const csgjs_vector2 &b, float v) {
-    return csgjs_vector2{a.x + (b.x - a.x) * v, a.y + (b.y - a.y) * v};
-}
-inline csgjs_vector negate(const csgjs_vector &a) {
-    return a * -1.0f;
-}
-inline float length(const csgjs_vector &a) {
-    return sqrtf(dot(a, a));
-}
-inline csgjs_vector unit(const csgjs_vector &a) {
-    return a / length(a);
-}
-inline csgjs_vector cross(const csgjs_vector &a, const csgjs_vector &b) {
-    return csgjs_vector(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
-}
-
-inline csgjs_vector operator-(const csgjs_vector &a) {
-	return csgjs_vector(-a.x, -a.y, -a.z);
-}
 
 // Vertex implementation
 
@@ -232,18 +243,14 @@ csgjs_plane::csgjs_plane(const csgjs_vector &a, const csgjs_vector &b, const csg
 void csgjs_plane::splitPolygon(const csgjs_polygon &polygon, std::vector<csgjs_polygon> &coplanarFront,
                                std::vector<csgjs_polygon> &coplanarBack, std::vector<csgjs_polygon> &front,
                                std::vector<csgjs_polygon> &back) const {
-    enum { COPLANAR = 0, FRONT = 1, BACK = 2, SPANNING = 3 };
+    
 
     // Classify each point as well as the entire polygon into one of the above
     // four classes.
-    int              polygonType = 0;
-    std::vector<int> types;
-	types.reserve(polygon.vertices.size());
+    int polygonType = 0;
     for (size_t i = 0; i < polygon.vertices.size(); i++) {
-        float t = dot(this->normal, polygon.vertices[i].pos) - this->w;
-        int   type = (t < -csgjs_EPSILON) ? BACK : ((t > csgjs_EPSILON) ? FRONT : COPLANAR);
-        polygonType |= type;
-        types.push_back(type);
+		PointClassification c = classify(polygon.vertices[i].pos);
+        polygonType |= c;
     }
 
     // Put the polygon in the correct list, splitting it when necessary.
@@ -267,9 +274,15 @@ void csgjs_plane::splitPolygon(const csgjs_polygon &polygon, std::vector<csgjs_p
         std::vector<csgjs_vertex> f, b;
 
         for (size_t i = 0; i < polygon.vertices.size(); i++) {
-            size_t       j = (i + 1) % polygon.vertices.size();
-            int          ti = types[i], tj = types[j];
-            csgjs_vertex vi = polygon.vertices[i], vj = polygon.vertices[j];
+
+			size_t       j = (i + 1) % polygon.vertices.size();
+
+			const csgjs_vertex &vi = polygon.vertices[i];
+			const csgjs_vertex &vj = polygon.vertices[j];
+			
+			int          ti = classify(vi.pos);
+			int          tj = classify(vj.pos);
+            
             if (ti != BACK)
                 f.push_back(vi);
             if (ti != FRONT)
@@ -395,13 +408,12 @@ std::vector<csgjs_polygon> csgjs_csgnode::clipPolygons(const std::vector<csgjs_p
     std::deque<std::pair<const csgjs_csgnode *const, std::vector<csgjs_polygon>>> clips;
     clips.push_back(std::make_pair(this, ilist));
     while (clips.size()) {
-        const csgjs_csgnode *      me = clips.front().first;
+        const csgjs_csgnode *             me = clips.front().first;
         const std::vector<csgjs_polygon> &list = clips.front().second;
-        
 
         if (!me->plane.ok()) {
             result.insert(result.end(), list.begin(), list.end());
-			clips.pop_front();
+            clips.pop_front();
             continue;
         }
 
@@ -417,7 +429,7 @@ std::vector<csgjs_polygon> csgjs_csgnode::clipPolygons(const std::vector<csgjs_p
         if (me->back)
             clips.push_back(std::make_pair(me->back, list_back));
 
-		clips.pop_front();
+        clips.pop_front();
     }
 
     return result;
@@ -497,9 +509,9 @@ void csgjs_csgnode::build(const std::vector<csgjs_polygon> &ilist) {
     builds.push_back(std::make_pair(this, ilist));
 
     while (builds.size()) {
-        csgjs_csgnode *            me = builds.front().first;
+        csgjs_csgnode *                   me = builds.front().first;
         const std::vector<csgjs_polygon> &list = builds.front().second;
-        
+
         assert(list.size() > 0 && "logic error");
 
         if (!me->plane.ok())
@@ -521,7 +533,7 @@ void csgjs_csgnode::build(const std::vector<csgjs_polygon> &ilist) {
             builds.push_back(std::make_pair(me->back, list_back));
         }
 
-		builds.pop_front();
+        builds.pop_front();
     }
 }
 
@@ -533,8 +545,8 @@ csgjs_csgnode::csgjs_csgnode(const std::vector<csgjs_polygon> &list) : front(0),
 }
 
 csgjs_csgnode::~csgjs_csgnode() {
-    
-	std::deque<csgjs_csgnode *> nodes_to_delete;
+
+    std::deque<csgjs_csgnode *> nodes_to_delete;
     std::deque<csgjs_csgnode *> nodes_to_disassemble;
 
     nodes_to_disassemble.push_back(this);
@@ -662,33 +674,33 @@ csgjs_model csgsmodel_sphere(const csgjs_vector &c, float r, int slices, int sta
 }
 
 csgjs_model csgsmodel_cyliner(const csgjs_vector &s, const csgjs_vector &e, float r, int slices) {
-    
-	csgjs_vector      ray = e - s;
 
-	csgjs_vector      axisZ = unit(ray);
-	bool isY = fabs(axisZ.y) > 0.5f;
-	csgjs_vector      axisX = unit(cross(csgjs_vector(isY, !isY, 0), axisZ));
-	csgjs_vector      axisY = unit(cross(axisX, axisZ));
+    csgjs_vector ray = e - s;
 
-	csgjs_vertex      start{ s, -axisZ };
-	csgjs_vertex      end{ e, unit(axisZ) };
+    csgjs_vector axisZ = unit(ray);
+    bool         isY = fabs(axisZ.y) > 0.5f;
+    csgjs_vector axisX = unit(cross(csgjs_vector(isY, !isY, 0), axisZ));
+    csgjs_vector axisY = unit(cross(axisX, axisZ));
 
-	std::vector<csgjs_polygon> polygons;
+    csgjs_vertex start{s, -axisZ};
+    csgjs_vertex end{e, unit(axisZ)};
+
+    std::vector<csgjs_polygon> polygons;
 
     auto point = [axisX, axisY, s, r, ray, axisZ](float stack, float slice, float normalBlend) -> csgjs_vertex {
-        float angle = slice * (float)M_PI * 2;
-		csgjs_vector out = axisX * cosf(angle) + axisY * sinf(angle);
-		csgjs_vector pos = s + ray * stack + out * r;
-		csgjs_vector normal = out * (1.0f - fabs(normalBlend)) + axisZ * normalBlend;
-		return csgjs_vertex{ pos, normal };
-	};
+        float        angle = slice * (float)M_PI * 2;
+        csgjs_vector out = axisX * cosf(angle) + axisY * sinf(angle);
+        csgjs_vector pos = s + ray * stack + out * r;
+        csgjs_vector normal = out * (1.0f - fabs(normalBlend)) + axisZ * normalBlend;
+        return csgjs_vertex{pos, normal};
+    };
 
     for (float i = 0; i < slices; i++) {
-		float t0 = i / slices;
-		float t1 = (i + 1) / slices;
-		polygons.push_back(csgjs_polygon({ start, point(0, t0, -1), point(0, t1, -1) }));
-		polygons.push_back(csgjs_polygon({ point(0, t1, 0), point(0, t0, 0), point(1, t0, 0), point(1, t1, 0) }));
-		polygons.push_back(csgjs_polygon({ end, point(1, t1, 1), point(1, t0, 1) }));
+        float t0 = i / slices;
+        float t1 = (i + 1) / slices;
+        polygons.push_back(csgjs_polygon({start, point(0, t0, -1), point(0, t1, -1)}));
+        polygons.push_back(csgjs_polygon({point(0, t1, 0), point(0, t0, 0), point(1, t0, 0), point(1, t1, 0)}));
+        polygons.push_back(csgjs_polygon({end, point(1, t1, 1), point(1, t0, 1)}));
     }
     return csgjs_modelFromPolygons(polygons);
 };

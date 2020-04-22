@@ -41,3 +41,11 @@ remove vector copy from many looping ops.
     gourd intersect cyl 91525ms
     gourd subtract cyl 159293ms
     cyl subtract gourd 99925ms
+
+in split polygon: do not cache the polygon type as creating the memory to cache
+it takes time and often the cache idn't needed. Just repeat the maths.
+
+    gourd union cyl 178445ms
+    gourd intersect cyl 80472ms
+    gourd subtract cyl 138508ms
+    cyl subtract gourd 90476ms
