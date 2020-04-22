@@ -22,7 +22,6 @@
 #define CSGJSCPP_REAL float
 #endif
 
-
 // `CSG.Plane.EPSILON` is the tolerance used by `splitPolygon()` to decide if a
 // point is on the plane.
 const CSGJSCPP_REAL csgjs_EPSILON = 0.0001f;
@@ -90,6 +89,7 @@ inline csgjs_vector2 lerp(const csgjs_vector2 &a, const csgjs_vector2 &b, CSGJSC
 struct csgjs_vertex {
     csgjs_vector  pos;
     csgjs_vector  normal;
+    csgjs_vector  col;
     csgjs_vector2 uv;
 };
 
@@ -153,12 +153,13 @@ std::vector<csgjs_polygon> csgjs_subtract(const std::vector<csgjs_polygon> &a, c
 csgjs_model csgjs_modelFromPolygons(const std::vector<csgjs_polygon> &polygons);
 
 csgjs_model csgsmodel_cube(const csgjs_vector &center = {0.0f, 0.0f, 0.0f},
-                           const csgjs_vector &dim = {1.0f, 1.0f, 1.0f});
-csgjs_model csgsmodel_sphere(const csgjs_vector &center = {0.0f, 0.0f, 0.0f}, CSGJSCPP_REAL radius = 1.0f, int slices = 16,
-                             int stacks = 8);
+                           const csgjs_vector &dim = {1.0f, 1.0f, 1.0f}, const csgjs_vector &col = {1.0f, 1.0f, 1.0f});
+csgjs_model csgsmodel_sphere(const csgjs_vector &center = {0.0f, 0.0f, 0.0f}, CSGJSCPP_REAL radius = 1.0f,
+	const csgjs_vector &col = { 1.0f, 1.0f, 1.0f },
+                             int slices = 16, int stacks = 8);
 
-csgjs_model csgsmodel_cyliner(const csgjs_vector &s = {0.0f, -1.0f, 0.0f}, const csgjs_vector &e = {0.0f, 1.0f, 0.0f},
-	CSGJSCPP_REAL radius = 1.0f, int slices = 16);
+csgjs_model csgsmodel_cylinder(const csgjs_vector &s = {0.0f, -1.0f, 0.0f}, const csgjs_vector &e = {0.0f, 1.0f, 0.0f},
+                              CSGJSCPP_REAL radius = 1.0f, const csgjs_vector &col = { 1.0f, 1.0f, 1.0f }, int slices = 16);
 
 #if defined(CSGJSCPP_IMPLEMENTATION)
 
@@ -214,6 +215,7 @@ inline csgjs_vertex interpolate(const csgjs_vertex &a, const csgjs_vertex &b, CS
     csgjs_vertex ret;
     ret.pos = lerp(a.pos, b.pos, t);
     ret.normal = lerp(a.normal, b.normal, t);
+	ret.col = lerp(a.col, b.col, t);
     ret.uv = lerp(a.uv, b.uv, t);
     return ret;
 }
@@ -288,8 +290,8 @@ void csgjs_plane::splitPolygon(const csgjs_polygon &polygon, std::vector<csgjs_p
             if (ti != FRONT)
                 b.push_back(vi);
             if ((ti | tj) == SPANNING) {
-				CSGJSCPP_REAL        t = (this->w - dot(this->normal, vi.pos)) / dot(this->normal, vj.pos - vi.pos);
-                csgjs_vertex v = interpolate(vi, vj, t);
+                CSGJSCPP_REAL t = (this->w - dot(this->normal, vi.pos)) / dot(this->normal, vj.pos - vi.pos);
+                csgjs_vertex  v = interpolate(vi, vj, t);
                 f.push_back(v);
                 b.push_back(v);
             }
@@ -618,7 +620,7 @@ inline std::vector<csgjs_polygon> csgjs_operation(const csgjs_model &a, const cs
     return csgjs_operation(csgjs_modelToPolygons(a), csgjs_modelToPolygons(b), fun);
 }
 
-csgjs_model csgsmodel_cube(const csgjs_vector &center, const csgjs_vector &dim) {
+csgjs_model csgsmodel_cube(const csgjs_vector &center, const csgjs_vector &dim, const csgjs_vector &col) {
 
     struct Quad {
         int          indices[4];
@@ -635,7 +637,7 @@ csgjs_model csgsmodel_cube(const csgjs_vector &center, const csgjs_vector &dim) 
             csgjs_vector pos(center.x + dim.x * (2.0f * !!(i & 1) - 1), center.y + dim.y * (2.0f * !!(i & 2) - 1),
                              center.z + dim.z * (2.0f * !!(i & 4) - 1));
 
-            verts.push_back({pos, q.normal, csgjs_vector2{0.0f, 0.0f}});
+            verts.push_back({pos, q.normal, col, csgjs_vector2{0.0f, 0.0f}});
         }
         polygons.push_back(csgjs_polygon(verts));
     }
@@ -643,16 +645,17 @@ csgjs_model csgsmodel_cube(const csgjs_vector &center, const csgjs_vector &dim) 
     return csgjs_modelFromPolygons(polygons);
 }
 
-csgjs_model csgsmodel_sphere(const csgjs_vector &c, CSGJSCPP_REAL r, int slices, int stacks) {
+csgjs_model csgsmodel_sphere(const csgjs_vector &c, CSGJSCPP_REAL r, const csgjs_vector &col, int slices, int stacks) {
 
     std::vector<csgjs_polygon> polygons;
 
-    auto vertex = [c, r](CSGJSCPP_REAL theta, CSGJSCPP_REAL phi) -> csgjs_vertex {
+    auto vertex = [c, r, col](CSGJSCPP_REAL theta, CSGJSCPP_REAL phi) -> csgjs_vertex {
         theta *= (CSGJSCPP_REAL)M_PI * 2;
         phi *= (CSGJSCPP_REAL)M_PI;
-        csgjs_vector dir((CSGJSCPP_REAL)cos(theta) * (CSGJSCPP_REAL)sin(phi), (CSGJSCPP_REAL)cos(phi), (CSGJSCPP_REAL)sin(theta) * (CSGJSCPP_REAL)sin(phi));
+        csgjs_vector dir((CSGJSCPP_REAL)cos(theta) * (CSGJSCPP_REAL)sin(phi), (CSGJSCPP_REAL)cos(phi),
+                         (CSGJSCPP_REAL)sin(theta) * (CSGJSCPP_REAL)sin(phi));
 
-        return csgjs_vertex{c + (dir * r), dir, {0.0f, 0.0f}};
+        return csgjs_vertex{c + (dir * r), dir, col, {0.0f, 0.0f}};
     };
     for (CSGJSCPP_REAL i = 0; i < slices; i++) {
         for (CSGJSCPP_REAL j = 0; j < stacks; j++) {
@@ -673,7 +676,7 @@ csgjs_model csgsmodel_sphere(const csgjs_vector &c, CSGJSCPP_REAL r, int slices,
     return csgjs_modelFromPolygons(polygons);
 }
 
-csgjs_model csgsmodel_cyliner(const csgjs_vector &s, const csgjs_vector &e, CSGJSCPP_REAL r, int slices) {
+csgjs_model csgsmodel_cylinder(const csgjs_vector &s, const csgjs_vector &e, CSGJSCPP_REAL r, const csgjs_vector &col, int slices) {
 
     csgjs_vector ray = e - s;
 
@@ -682,22 +685,23 @@ csgjs_model csgsmodel_cyliner(const csgjs_vector &s, const csgjs_vector &e, CSGJ
     csgjs_vector axisX = unit(cross(csgjs_vector(isY, !isY, 0), axisZ));
     csgjs_vector axisY = unit(cross(axisX, axisZ));
 
-    csgjs_vertex start{s, -axisZ};
-    csgjs_vertex end{e, unit(axisZ)};
+    csgjs_vertex start{s, -axisZ, col};
+    csgjs_vertex end{e, unit(axisZ), col };
 
     std::vector<csgjs_polygon> polygons;
 
-    auto point = [axisX, axisY, s, r, ray, axisZ](CSGJSCPP_REAL stack, CSGJSCPP_REAL slice, CSGJSCPP_REAL normalBlend) -> csgjs_vertex {
-		CSGJSCPP_REAL        angle = slice * (CSGJSCPP_REAL)M_PI * 2;
-        csgjs_vector out = axisX * (CSGJSCPP_REAL)cos(angle) + axisY * (CSGJSCPP_REAL)sin(angle);
-        csgjs_vector pos = s + ray * stack + out * r;
-        csgjs_vector normal = out * (1.0f - fabs(normalBlend)) + axisZ * normalBlend;
-        return csgjs_vertex{pos, normal};
+    auto point = [axisX, axisY, s, r, ray, axisZ, col](CSGJSCPP_REAL stack, CSGJSCPP_REAL slice,
+                                                  CSGJSCPP_REAL normalBlend) -> csgjs_vertex {
+        CSGJSCPP_REAL angle = slice * (CSGJSCPP_REAL)M_PI * 2;
+        csgjs_vector  out = axisX * (CSGJSCPP_REAL)cos(angle) + axisY * (CSGJSCPP_REAL)sin(angle);
+        csgjs_vector  pos = s + ray * stack + out * r;
+        csgjs_vector  normal = out * (1.0f - fabs(normalBlend)) + axisZ * normalBlend;
+        return csgjs_vertex{pos, normal, col};
     };
 
     for (CSGJSCPP_REAL i = 0; i < slices; i++) {
-		CSGJSCPP_REAL t0 = i / slices;
-		CSGJSCPP_REAL t1 = (i + 1) / slices;
+        CSGJSCPP_REAL t0 = i / slices;
+        CSGJSCPP_REAL t1 = (i + 1) / slices;
         polygons.push_back(csgjs_polygon({start, point(0, t0, -1), point(0, t1, -1)}));
         polygons.push_back(csgjs_polygon({point(0, t1, 0), point(0, t0, 0), point(1, t0, 0), point(1, t1, 0)}));
         polygons.push_back(csgjs_polygon({end, point(1, t1, 1), point(1, t0, 1)}));

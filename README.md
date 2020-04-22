@@ -56,3 +56,10 @@ last cleanup
     gourd intersect cyl 84397ms
     gourd subtract cyl 139961ms
     cyl subtract gourd 100031ms
+
+add color in to csgjs_vertex. interestingly expensive.
+
+    gourd union cyl 200411ms
+    gourd intersect cyl 107755ms
+    gourd subtract cyl 168332ms
+    cyl subtract gourd 102270ms
