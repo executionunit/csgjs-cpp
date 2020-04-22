@@ -17,7 +17,7 @@ The main.cpp file has a simple `Timer` class that only works on windows. Annoyin
 
 # Building
 
-The code uses CMake (version 3.16 or greater).
+The code uses CMake (version 3.16 or greater). I've tested building on Windows, Linux and macOS. Performance measurements are only done on Windows.
 
 # Running
 
