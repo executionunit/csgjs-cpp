@@ -42,7 +42,7 @@ struct Vector {
 inline Vector operator+(const Vector &a, const Vector &b) {
     return Vector(a.x + b.x, a.y + b.y, a.z + b.z);
 }
-Vector operator-(const Vector &a, const Vector &b) {
+inline Vector operator-(const Vector &a, const Vector &b) {
     return Vector(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 inline Vector operator*(const Vector &a, CSGJSCPP_REAL b) {
@@ -84,20 +84,27 @@ struct Polygon;
 
 // Represents a plane in 3D space.
 struct Plane {
-    Vector  normal;
+    Vector        normal;
     CSGJSCPP_REAL w;
 
     Plane();
     Plane(const Vector &a, const Vector &b, const Vector &c);
-    bool ok() const;
-    void flip();
-    void splitpolygon(const Polygon &poly, std::vector<Polygon> &coplanarFront,
-                      std::vector<Polygon> &coplanarBack, std::vector<Polygon> &front,
-                      std::vector<Polygon> &back) const;
+    
+	inline bool ok() const {
+        return length(this->normal) > 0.0f;
+    }
+
+	inline void Plane::flip() {
+		this->normal = negate(this->normal);
+		this->w *= -1.0f;
+	}
+
+    void splitpolygon(const Polygon &poly, std::vector<Polygon> &coplanarFront, std::vector<Polygon> &coplanarBack,
+                      std::vector<Polygon> &front, std::vector<Polygon> &back) const;
 
     enum Classification { COPLANAR = 0, FRONT = 1, BACK = 2, SPANNING = 3 };
     inline Classification classify(const Vector &p) const {
-        CSGJSCPP_REAL       t = dot(normal, p) - this->w;
+        CSGJSCPP_REAL  t = dot(normal, p) - this->w;
         Classification c = (t < -csgjs_EPSILON) ? BACK : ((t > csgjs_EPSILON) ? FRONT : COPLANAR);
         return c;
     }
@@ -114,15 +121,15 @@ struct Plane {
 struct Polygon {
     std::vector<Vertex> vertices;
     Plane               plane;
-    void                      flip();
+    void                flip();
 
     Polygon();
     Polygon(const std::vector<Vertex> &list);
 };
 
 struct Model {
-    std::vector<Vertex> vertices;
-    std::vector<uint16_t>     indices;
+    std::vector<Vertex>   vertices;
+    std::vector<uint16_t> indices;
 };
 
 // public interface - not super efficient, if you use multiple CSG operations you should
@@ -139,14 +146,13 @@ std::vector<Polygon> csgsubtract(const std::vector<Polygon> &a, const std::vecto
 
 Model modelfrompolygons(const std::vector<Polygon> &polygons);
 
-Model csgsmodel_cube(const Vector &center = {0.0f, 0.0f, 0.0f},
-                           const Vector &dim = {1.0f, 1.0f, 1.0f}, const Vector &col = {1.0f, 1.0f, 1.0f});
+Model csgsmodel_cube(const Vector &center = {0.0f, 0.0f, 0.0f}, const Vector &dim = {1.0f, 1.0f, 1.0f},
+                     const Vector &col = {1.0f, 1.0f, 1.0f});
 Model csgsmodel_sphere(const Vector &center = {0.0f, 0.0f, 0.0f}, CSGJSCPP_REAL radius = 1.0f,
-                             const Vector &col = {1.0f, 1.0f, 1.0f}, int slices = 16, int stacks = 8);
+                       const Vector &col = {1.0f, 1.0f, 1.0f}, int slices = 16, int stacks = 8);
 
 Model csgsmodel_cylinder(const Vector &s = {0.0f, -1.0f, 0.0f}, const Vector &e = {0.0f, 1.0f, 0.0f},
-                               CSGJSCPP_REAL radius = 1.0f, const Vector &col = {1.0f, 1.0f, 1.0f},
-                               int slices = 16);
+                         CSGJSCPP_REAL radius = 1.0f, const Vector &col = {1.0f, 1.0f, 1.0f}, int slices = 16);
 
 } // namespace csgjscpp
 
@@ -183,9 +189,9 @@ struct CSGNode {
     ~CSGNode();
 
     CSGNode *            clone() const;
-    void                       clipto(const CSGNode *other);
-    void                       invert();
-    void                       build(const std::vector<Polygon> &Polygon);
+    void                 clipto(const CSGNode *other);
+    void                 invert();
+    void                 build(const std::vector<Polygon> &Polygon);
     std::vector<Polygon> clippolygons(const std::vector<Polygon> &list) const;
     std::vector<Polygon> allpolygons() const;
 };
@@ -215,14 +221,6 @@ inline Vertex interpolate(const Vertex &a, const Vertex &b, CSGJSCPP_REAL t) {
 Plane::Plane() : normal(), w(0.0f) {
 }
 
-bool Plane::ok() const {
-    return length(this->normal) > 0.0f;
-}
-
-void Plane::flip() {
-    this->normal = negate(this->normal);
-    this->w *= -1.0f;
-}
 
 Plane::Plane(const Vector &a, const Vector &b, const Vector &c) {
     this->normal = unit(cross(b - a, c - a));
@@ -234,9 +232,8 @@ Plane::Plane(const Vector &a, const Vector &b, const Vector &c) {
 // `coplanarFront` or `coplanarBack` depending on their orientation with
 // respect to this plane. Polygons in front or in back of this plane go into
 // either `front` or `back`.
-void Plane::splitpolygon(const Polygon &poly, std::vector<Polygon> &coplanarFront,
-                               std::vector<Polygon> &coplanarBack, std::vector<Polygon> &front,
-                               std::vector<Polygon> &back) const {
+void Plane::splitpolygon(const Polygon &poly, std::vector<Polygon> &coplanarFront, std::vector<Polygon> &coplanarBack,
+                         std::vector<Polygon> &front, std::vector<Polygon> &back) const {
 
     // Classify each point as well as the entire polygon into one of the above
     // four classes.
@@ -281,7 +278,7 @@ void Plane::splitpolygon(const Polygon &poly, std::vector<Polygon> &coplanarFron
                 b.push_back(vi);
             if ((ti | tj) == SPANNING) {
                 CSGJSCPP_REAL t = (this->w - dot(this->normal, vi.pos)) / dot(this->normal, vj.pos - vi.pos);
-                Vertex  v = interpolate(vi, vj, t);
+                Vertex        v = interpolate(vi, vj, t);
                 f.push_back(v);
                 b.push_back(v);
             }
@@ -578,8 +575,8 @@ inline std::vector<Polygon> csgjs_modelToPolygons(const Model &model) {
 }
 
 Model modelfrompolygons(const std::vector<Polygon> &polygons) {
-    Model model;
-    uint16_t    p = 0;
+    Model    model;
+    uint16_t p = 0;
     for (size_t i = 0; i < polygons.size(); i++) {
         const Polygon &poly = polygons[i];
         for (size_t j = 2; j < poly.vertices.size(); j++) {
@@ -596,8 +593,8 @@ Model modelfrompolygons(const std::vector<Polygon> &polygons) {
 
 typedef CSGNode *csg_function(const CSGNode *a1, const CSGNode *b1);
 
-std::vector<Polygon> csgjs_operation(const std::vector<Polygon> &apoly,
-                                           const std::vector<Polygon> &bpoly, csg_function fun) {
+std::vector<Polygon> csgjs_operation(const std::vector<Polygon> &apoly, const std::vector<Polygon> &bpoly,
+                                     csg_function fun) {
 
     CSGNode A(apoly);
     CSGNode B(bpoly);
@@ -613,7 +610,7 @@ inline std::vector<Polygon> csgjs_operation(const Model &a, const Model &b, csg_
 Model csgsmodel_cube(const Vector &center, const Vector &dim, const Vector &col) {
 
     struct Quad {
-        int          indices[4];
+        int    indices[4];
         Vector normal;
     } quads[] = {{{0, 4, 6, 2}, {-1, 0, 0}}, {{1, 3, 7, 5}, {+1, 0, 0}}, {{0, 1, 5, 4}, {0, -1, 0}},
                  {{2, 6, 7, 3}, {0, +1, 0}}, {{0, 2, 3, 1}, {0, 0, -1}}, {{4, 5, 7, 6}, {0, 0, +1}}};
@@ -625,7 +622,7 @@ Model csgsmodel_cube(const Vector &center, const Vector &dim, const Vector &col)
 
         for (auto i : q.indices) {
             Vector pos(center.x + dim.x * (2.0f * !!(i & 1) - 1), center.y + dim.y * (2.0f * !!(i & 2) - 1),
-                             center.z + dim.z * (2.0f * !!(i & 4) - 1));
+                       center.z + dim.z * (2.0f * !!(i & 4) - 1));
 
             verts.push_back({pos, q.normal, col});
         }
@@ -643,7 +640,7 @@ Model csgsmodel_sphere(const Vector &c, CSGJSCPP_REAL r, const Vector &col, int 
         theta *= (CSGJSCPP_REAL)M_PI * 2;
         phi *= (CSGJSCPP_REAL)M_PI;
         Vector dir((CSGJSCPP_REAL)cos(theta) * (CSGJSCPP_REAL)sin(phi), (CSGJSCPP_REAL)cos(phi),
-                         (CSGJSCPP_REAL)sin(theta) * (CSGJSCPP_REAL)sin(phi));
+                   (CSGJSCPP_REAL)sin(theta) * (CSGJSCPP_REAL)sin(phi));
 
         return Vertex{c + (dir * r), dir, col};
     };
@@ -666,13 +663,12 @@ Model csgsmodel_sphere(const Vector &c, CSGJSCPP_REAL r, const Vector &col, int 
     return modelfrompolygons(polygons);
 }
 
-Model csgsmodel_cylinder(const Vector &s, const Vector &e, CSGJSCPP_REAL r, const Vector &col,
-                               int slices) {
+Model csgsmodel_cylinder(const Vector &s, const Vector &e, CSGJSCPP_REAL r, const Vector &col, int slices) {
 
     Vector ray = e - s;
 
     Vector axisZ = unit(ray);
-    bool         isY = fabs(axisZ.y) > 0.5f;
+    bool   isY = fabs(axisZ.y) > 0.5f;
     Vector axisX = unit(cross(Vector(isY, !isY, 0), axisZ));
     Vector axisY = unit(cross(axisX, axisZ));
 
@@ -684,9 +680,9 @@ Model csgsmodel_cylinder(const Vector &s, const Vector &e, CSGJSCPP_REAL r, cons
     auto point = [axisX, axisY, s, r, ray, axisZ, col](CSGJSCPP_REAL stack, CSGJSCPP_REAL slice,
                                                        CSGJSCPP_REAL normalBlend) -> Vertex {
         CSGJSCPP_REAL angle = slice * (CSGJSCPP_REAL)M_PI * 2;
-        Vector  out = axisX * (CSGJSCPP_REAL)cos(angle) + axisY * (CSGJSCPP_REAL)sin(angle);
-        Vector  pos = s + ray * stack + out * r;
-        Vector  normal = out * (1.0f - fabs(normalBlend)) + axisZ * normalBlend;
+        Vector        out = axisX * (CSGJSCPP_REAL)cos(angle) + axisY * (CSGJSCPP_REAL)sin(angle);
+        Vector        pos = s + ray * stack + out * r;
+        Vector        normal = out * (1.0f - fabs(normalBlend)) + axisZ * normalBlend;
         return Vertex{pos, normal, col};
     };
 
@@ -716,8 +712,7 @@ std::vector<Polygon> csgunion(const std::vector<Polygon> &a, const std::vector<P
     return csgjs_operation(a, b, csg_union);
 }
 
-std::vector<Polygon> csgintersection(const std::vector<Polygon> &a,
-                                              const std::vector<Polygon> &b) {
+std::vector<Polygon> csgintersection(const std::vector<Polygon> &a, const std::vector<Polygon> &b) {
     return csgjs_operation(a, b, csg_intersect);
 }
 

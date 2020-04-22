@@ -4,6 +4,7 @@ project(CSGJSCPP)
 
 set(CSGJS_SRCS
     main.cpp
+	checkimpl.cpp
     csgjs.h
 )
 

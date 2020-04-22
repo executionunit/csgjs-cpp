@@ -1,5 +1,4 @@
 //#define CSGJSCPP_REAL double
-#define CSGJSCPP_IMPLEMENTATION
 #include "csgjs.h"
 
 #include <fstream>
