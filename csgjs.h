@@ -238,7 +238,7 @@ void csgjs_plane::splitPolygon(const csgjs_polygon &polygon, std::vector<csgjs_p
     // four classes.
     int              polygonType = 0;
     std::vector<int> types;
-
+	types.reserve(polygon.vertices.size());
     for (size_t i = 0; i < polygon.vertices.size(); i++) {
         float t = dot(this->normal, polygon.vertices[i].pos) - this->w;
         int   type = (t < -csgjs_EPSILON) ? BACK : ((t > csgjs_EPSILON) ? FRONT : COPLANAR);
@@ -265,6 +265,7 @@ void csgjs_plane::splitPolygon(const csgjs_polygon &polygon, std::vector<csgjs_p
     }
     case SPANNING: {
         std::vector<csgjs_vertex> f, b;
+
         for (size_t i = 0; i < polygon.vertices.size(); i++) {
             size_t       j = (i + 1) % polygon.vertices.size();
             int          ti = types[i], tj = types[j];
