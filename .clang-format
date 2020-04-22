@@ -1,0 +1,11 @@
+---
+# We'll use defaults from the LLVM style, but with 4 columns indentation.
+BasedOnStyle: LLVM
+IndentWidth: 4
+AlignAfterOpenBracket: true
+SortIncludes: false
+ColumnLimit: 120
+AccessModifierOffset: -4
+AlignConsecutiveDeclarations: true
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None

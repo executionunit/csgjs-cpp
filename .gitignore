@@ -1,3 +1,6 @@
+# ignore the cmake build folder that I use.
+.build
+
 # Prerequisites
 *.d
 
