@@ -49,3 +49,10 @@ it takes time and often the cache idn't needed. Just repeat the maths.
     gourd intersect cyl 80472ms
     gourd subtract cyl 138508ms
     cyl subtract gourd 90476ms
+
+last cleanup
+
+    gourd union cyl 163780ms
+    gourd intersect cyl 84397ms
+    gourd subtract cyl 139961ms
+    cyl subtract gourd 100031ms

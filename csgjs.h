@@ -127,7 +127,7 @@ struct csgjs_polygon {
     void                      flip();
 
     csgjs_polygon();
-    csgjs_polygon(const std::vector<csgjs_vertex> &list);
+	csgjs_polygon(const std::vector<csgjs_vertex> &list);
 };
 
 struct csgjs_model {
@@ -248,9 +248,8 @@ void csgjs_plane::splitPolygon(const csgjs_polygon &polygon, std::vector<csgjs_p
     // Classify each point as well as the entire polygon into one of the above
     // four classes.
     int polygonType = 0;
-    for (size_t i = 0; i < polygon.vertices.size(); i++) {
-		PointClassification c = classify(polygon.vertices[i].pos);
-        polygonType |= c;
+    for (const auto &v: polygon.vertices) {
+        polygonType |= classify(v.pos);
     }
 
     // Put the polygon in the correct list, splitting it when necessary.
