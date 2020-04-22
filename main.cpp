@@ -43,7 +43,7 @@ bool modeltoply(const char *filename, const Model &model) {
                    << (int)(v.col.z * 255) << " " << '\n';
         }
 
-        for (int idx = 2; idx < model.indices.size(); idx += 3) {
+        for (size_t idx = 2; idx < model.indices.size(); idx += 3) {
             stream << "3 " << model.indices[idx - 2] << " " << model.indices[idx - 1] << " " << model.indices[idx - 0]
                    << '\n';
         }

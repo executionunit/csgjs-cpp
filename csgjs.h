@@ -16,7 +16,11 @@
 //
 // modified by dazza - 200421
 
+#include <algorithm>
 #include <vector>
+#define _USE_MATH_DEFINES
+#include <math.h>
+#include <cstdint>
 
 #if !defined(CSGJSCPP_REAL)
 #define CSGJSCPP_REAL float
@@ -94,7 +98,7 @@ struct Plane {
         return length(this->normal) > 0.0f;
     }
 
-    inline void Plane::flip() {
+    inline void flip() {
         this->normal = negate(this->normal);
         this->w *= -1.0f;
     }
@@ -125,7 +129,7 @@ struct Polygon {
     Polygon();
     Polygon(const std::vector<Vertex> &list);
 
-	inline void Polygon::flip() {
+	inline void flip() {
 		std::reverse(vertices.begin(), vertices.end());
 		for (size_t i = 0; i < vertices.size(); i++)
 			vertices[i].normal = negate(vertices[i].normal);
@@ -172,10 +176,7 @@ Model csgsmodel_cylinder(const Vector &s = {0.0f, -1.0f, 0.0f}, const Vector &e 
 /* implementation below here */
 
 #include <deque>
-#include <algorithm>
 #include <assert.h>
-#define _USE_MATH_DEFINES
-#include <math.h>
 
 namespace csgjscpp {
 
@@ -693,7 +694,7 @@ Model csgsmodel_cylinder(const Vector &s, const Vector &e, CSGJSCPP_REAL r, cons
         polygons.push_back(Polygon({end, point(1, t1, 1), point(1, t0, 1)}));
     }
     return modelfrompolygons(polygons);
-};
+}
 
 Model csgunion(const Model &a, const Model &b) {
     return modelfrompolygons(csgjs_operation(a, b, csg_union));
