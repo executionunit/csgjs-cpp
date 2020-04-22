@@ -72,25 +72,10 @@ inline csgjs_vector operator-(const csgjs_vector &a) {
     return csgjs_vector(-a.x, -a.y, -a.z);
 }
 
-struct csgjs_vector2 {
-    CSGJSCPP_REAL x, y;
-
-    csgjs_vector2() : x((CSGJSCPP_REAL)0.0), y((CSGJSCPP_REAL)0.0) {
-    }
-
-    csgjs_vector2(CSGJSCPP_REAL x, CSGJSCPP_REAL y) : x(x), y(y) {
-    }
-};
-
-inline csgjs_vector2 lerp(const csgjs_vector2 &a, const csgjs_vector2 &b, CSGJSCPP_REAL v) {
-    return csgjs_vector2{a.x + (b.x - a.x) * v, a.y + (b.y - a.y) * v};
-}
-
 struct csgjs_vertex {
     csgjs_vector  pos;
     csgjs_vector  normal;
     csgjs_vector  col;
-    csgjs_vector2 uv;
 };
 
 struct csgjs_polygon;
@@ -216,7 +201,6 @@ inline csgjs_vertex interpolate(const csgjs_vertex &a, const csgjs_vertex &b, CS
     ret.pos = lerp(a.pos, b.pos, t);
     ret.normal = lerp(a.normal, b.normal, t);
 	ret.col = lerp(a.col, b.col, t);
-    ret.uv = lerp(a.uv, b.uv, t);
     return ret;
 }
 
@@ -637,7 +621,7 @@ csgjs_model csgsmodel_cube(const csgjs_vector &center, const csgjs_vector &dim, 
             csgjs_vector pos(center.x + dim.x * (2.0f * !!(i & 1) - 1), center.y + dim.y * (2.0f * !!(i & 2) - 1),
                              center.z + dim.z * (2.0f * !!(i & 4) - 1));
 
-            verts.push_back({pos, q.normal, col, csgjs_vector2{0.0f, 0.0f}});
+            verts.push_back({pos, q.normal, col});
         }
         polygons.push_back(csgjs_polygon(verts));
     }
@@ -655,7 +639,7 @@ csgjs_model csgsmodel_sphere(const csgjs_vector &c, CSGJSCPP_REAL r, const csgjs
         csgjs_vector dir((CSGJSCPP_REAL)cos(theta) * (CSGJSCPP_REAL)sin(phi), (CSGJSCPP_REAL)cos(phi),
                          (CSGJSCPP_REAL)sin(theta) * (CSGJSCPP_REAL)sin(phi));
 
-        return csgjs_vertex{c + (dir * r), dir, col, {0.0f, 0.0f}};
+        return csgjs_vertex{c + (dir * r), dir, col};
     };
     for (CSGJSCPP_REAL i = 0; i < slices; i++) {
         for (CSGJSCPP_REAL j = 0; j < stacks; j++) {

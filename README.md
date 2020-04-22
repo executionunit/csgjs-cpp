@@ -12,7 +12,8 @@ List of changes from the initial port here: https://github.com/dabroz/csgjs-cpp
 * `csgjs_EPSILON` set to 0.0001 (from 0.00001) as we're using floats.
 * port `csgsmodel_cube`, `csgmodel_sphere` and `csgsmodel_cyliner` from the JS library
 * bring in the gourd model for comparisons tests with JS version.
-
+* Add color in to the csgjs_vertex structure and interpolation. Better exports.
+* Can define CSGJSCPP_REAL to double to force doubles for everything, defaults to float.
 
 base point
 
@@ -63,3 +64,10 @@ add color in to csgjs_vertex. interestingly expensive.
     gourd intersect cyl 107755ms
     gourd subtract cyl 168332ms
     cyl subtract gourd 102270ms
+
+remove UV as not used.
+
+    gourd union cyl 184774ms
+    gourd intersect cyl 105220ms
+    gourd subtract cyl 167227ms
+    cyl subtract gourd 102725ms
