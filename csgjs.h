@@ -18,71 +18,74 @@
 
 #include <vector>
 
+#if !defined(CSGJSCPP_REAL)
+#define CSGJSCPP_REAL float
+#endif
+
+
 // `CSG.Plane.EPSILON` is the tolerance used by `splitPolygon()` to decide if a
 // point is on the plane.
-const float csgjs_EPSILON = 0.0001f;
-
+const CSGJSCPP_REAL csgjs_EPSILON = 0.0001f;
 
 struct csgjs_vector {
-    float x, y, z;
+    CSGJSCPP_REAL x, y, z;
 
     csgjs_vector() : x(0.0f), y(0.0f), z(0.0f) {
     }
-    csgjs_vector(float x, float y, float z) : x(x), y(y), z(z) {
+    csgjs_vector(CSGJSCPP_REAL x, CSGJSCPP_REAL y, CSGJSCPP_REAL z) : x(x), y(y), z(z) {
     }
 };
 
 // Vector implementation
 
 inline csgjs_vector operator+(const csgjs_vector &a, const csgjs_vector &b) {
-	return csgjs_vector(a.x + b.x, a.y + b.y, a.z + b.z);
+    return csgjs_vector(a.x + b.x, a.y + b.y, a.z + b.z);
 }
 csgjs_vector operator-(const csgjs_vector &a, const csgjs_vector &b) {
-	return csgjs_vector(a.x - b.x, a.y - b.y, a.z - b.z);
+    return csgjs_vector(a.x - b.x, a.y - b.y, a.z - b.z);
 }
-inline csgjs_vector operator*(const csgjs_vector &a, float b) {
-	return csgjs_vector(a.x * b, a.y * b, a.z * b);
+inline csgjs_vector operator*(const csgjs_vector &a, CSGJSCPP_REAL b) {
+    return csgjs_vector(a.x * b, a.y * b, a.z * b);
 }
-inline csgjs_vector operator/(const csgjs_vector &a, float b) {
-	return a * (1.0f / b);
+inline csgjs_vector operator/(const csgjs_vector &a, CSGJSCPP_REAL b) {
+    return a * ((CSGJSCPP_REAL)1.0 / b);
 }
-inline float dot(const csgjs_vector &a, const csgjs_vector &b) {
-	return a.x * b.x + a.y * b.y + a.z * b.z;
+inline CSGJSCPP_REAL dot(const csgjs_vector &a, const csgjs_vector &b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
 }
-inline csgjs_vector lerp(const csgjs_vector &a, const csgjs_vector &b, float v) {
-	return a + (b - a) * v;
+inline csgjs_vector lerp(const csgjs_vector &a, const csgjs_vector &b, CSGJSCPP_REAL v) {
+    return a + (b - a) * v;
 }
 inline csgjs_vector negate(const csgjs_vector &a) {
-	return a * -1.0f;
+    return a * -(CSGJSCPP_REAL)1.0;
 }
-inline float length(const csgjs_vector &a) {
-	return sqrtf(dot(a, a));
+inline CSGJSCPP_REAL length(const csgjs_vector &a) {
+    return (CSGJSCPP_REAL)sqrt(dot(a, a));
 }
 inline csgjs_vector unit(const csgjs_vector &a) {
-	return a / length(a);
+    return a / length(a);
 }
 inline csgjs_vector cross(const csgjs_vector &a, const csgjs_vector &b) {
-	return csgjs_vector(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+    return csgjs_vector(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
 }
 
 inline csgjs_vector operator-(const csgjs_vector &a) {
-	return csgjs_vector(-a.x, -a.y, -a.z);
+    return csgjs_vector(-a.x, -a.y, -a.z);
 }
 
 struct csgjs_vector2 {
-    float x, y;
+    CSGJSCPP_REAL x, y;
 
-    csgjs_vector2() : x(0.0f), y(0.0f) {
+    csgjs_vector2() : x((CSGJSCPP_REAL)0.0), y((CSGJSCPP_REAL)0.0) {
     }
 
-    csgjs_vector2(float x, float y) : x(x), y(y) {
+    csgjs_vector2(CSGJSCPP_REAL x, CSGJSCPP_REAL y) : x(x), y(y) {
     }
 };
 
-inline csgjs_vector2 lerp(const csgjs_vector2 &a, const csgjs_vector2 &b, float v) {
-	return csgjs_vector2{ a.x + (b.x - a.x) * v, a.y + (b.y - a.y) * v };
+inline csgjs_vector2 lerp(const csgjs_vector2 &a, const csgjs_vector2 &b, CSGJSCPP_REAL v) {
+    return csgjs_vector2{a.x + (b.x - a.x) * v, a.y + (b.y - a.y) * v};
 }
-
 
 struct csgjs_vertex {
     csgjs_vector  pos;
@@ -94,8 +97,8 @@ struct csgjs_polygon;
 
 // Represents a plane in 3D space.
 struct csgjs_plane {
-    csgjs_vector normal;
-    float        w;
+    csgjs_vector  normal;
+    CSGJSCPP_REAL w;
 
     csgjs_plane();
     csgjs_plane(const csgjs_vector &a, const csgjs_vector &b, const csgjs_vector &c);
@@ -105,12 +108,12 @@ struct csgjs_plane {
                       std::vector<csgjs_polygon> &coplanarBack, std::vector<csgjs_polygon> &front,
                       std::vector<csgjs_polygon> &back) const;
 
-	enum PointClassification { COPLANAR = 0, FRONT = 1, BACK = 2, SPANNING = 3 };
-	inline PointClassification classify(const csgjs_vector &p)const {
-		float t = dot(normal, p) - this->w;
-		PointClassification   c = (t < -csgjs_EPSILON) ? BACK : ((t > csgjs_EPSILON) ? FRONT : COPLANAR);
-		return c;
-	}
+    enum PointClassification { COPLANAR = 0, FRONT = 1, BACK = 2, SPANNING = 3 };
+    inline PointClassification classify(const csgjs_vector &p) const {
+        CSGJSCPP_REAL       t = dot(normal, p) - this->w;
+        PointClassification c = (t < -csgjs_EPSILON) ? BACK : ((t > csgjs_EPSILON) ? FRONT : COPLANAR);
+        return c;
+    }
 };
 
 // Represents a convex polygon. The vertices used to initialize a polygon must
@@ -127,7 +130,7 @@ struct csgjs_polygon {
     void                      flip();
 
     csgjs_polygon();
-	csgjs_polygon(const std::vector<csgjs_vertex> &list);
+    csgjs_polygon(const std::vector<csgjs_vertex> &list);
 };
 
 struct csgjs_model {
@@ -151,13 +154,13 @@ csgjs_model csgjs_modelFromPolygons(const std::vector<csgjs_polygon> &polygons);
 
 csgjs_model csgsmodel_cube(const csgjs_vector &center = {0.0f, 0.0f, 0.0f},
                            const csgjs_vector &dim = {1.0f, 1.0f, 1.0f});
-csgjs_model csgsmodel_sphere(const csgjs_vector &center = {0.0f, 0.0f, 0.0f}, float radius = 1.0f, int slices = 16,
+csgjs_model csgsmodel_sphere(const csgjs_vector &center = {0.0f, 0.0f, 0.0f}, CSGJSCPP_REAL radius = 1.0f, int slices = 16,
                              int stacks = 8);
 
 csgjs_model csgsmodel_cyliner(const csgjs_vector &s = {0.0f, -1.0f, 0.0f}, const csgjs_vector &e = {0.0f, 1.0f, 0.0f},
-                              float radius = 1.0f, int slices = 16);
+	CSGJSCPP_REAL radius = 1.0f, int slices = 16);
 
-#if defined(CSGJS_IMPLEMENTATION)
+#if defined(CSGJSCPP_IMPLEMENTATION)
 
 /***************************************************************************************************/
 /***************************************************************************************************/
@@ -171,7 +174,6 @@ csgjs_model csgsmodel_cyliner(const csgjs_vector &s = {0.0f, -1.0f, 0.0f}, const
 #include <assert.h>
 #define _USE_MATH_DEFINES
 #include <math.h>
-
 
 // Holds a node in a BSP tree. A BSP tree is built from a collection of polygons
 // by picking a polygon to split along. That polygon (and all other coplanar
@@ -208,7 +210,7 @@ inline csgjs_vertex flip(csgjs_vertex v) {
 // Create a new vertex between this vertex and `other` by linearly
 // interpolating all properties using a parameter of `t`. Subclasses should
 // override this to interpolate additional properties.
-inline csgjs_vertex interpolate(const csgjs_vertex &a, const csgjs_vertex &b, float t) {
+inline csgjs_vertex interpolate(const csgjs_vertex &a, const csgjs_vertex &b, CSGJSCPP_REAL t) {
     csgjs_vertex ret;
     ret.pos = lerp(a.pos, b.pos, t);
     ret.normal = lerp(a.normal, b.normal, t);
@@ -243,12 +245,11 @@ csgjs_plane::csgjs_plane(const csgjs_vector &a, const csgjs_vector &b, const csg
 void csgjs_plane::splitPolygon(const csgjs_polygon &polygon, std::vector<csgjs_polygon> &coplanarFront,
                                std::vector<csgjs_polygon> &coplanarBack, std::vector<csgjs_polygon> &front,
                                std::vector<csgjs_polygon> &back) const {
-    
 
     // Classify each point as well as the entire polygon into one of the above
     // four classes.
     int polygonType = 0;
-    for (const auto &v: polygon.vertices) {
+    for (const auto &v : polygon.vertices) {
         polygonType |= classify(v.pos);
     }
 
@@ -274,20 +275,20 @@ void csgjs_plane::splitPolygon(const csgjs_polygon &polygon, std::vector<csgjs_p
 
         for (size_t i = 0; i < polygon.vertices.size(); i++) {
 
-			size_t       j = (i + 1) % polygon.vertices.size();
+            size_t j = (i + 1) % polygon.vertices.size();
 
-			const csgjs_vertex &vi = polygon.vertices[i];
-			const csgjs_vertex &vj = polygon.vertices[j];
-			
-			int          ti = classify(vi.pos);
-			int          tj = classify(vj.pos);
-            
+            const csgjs_vertex &vi = polygon.vertices[i];
+            const csgjs_vertex &vj = polygon.vertices[j];
+
+            int ti = classify(vi.pos);
+            int tj = classify(vj.pos);
+
             if (ti != BACK)
                 f.push_back(vi);
             if (ti != FRONT)
                 b.push_back(vi);
             if ((ti | tj) == SPANNING) {
-                float        t = (this->w - dot(this->normal, vi.pos)) / dot(this->normal, vj.pos - vi.pos);
+				CSGJSCPP_REAL        t = (this->w - dot(this->normal, vi.pos)) / dot(this->normal, vj.pos - vi.pos);
                 csgjs_vertex v = interpolate(vi, vj, t);
                 f.push_back(v);
                 b.push_back(v);
@@ -642,19 +643,19 @@ csgjs_model csgsmodel_cube(const csgjs_vector &center, const csgjs_vector &dim) 
     return csgjs_modelFromPolygons(polygons);
 }
 
-csgjs_model csgsmodel_sphere(const csgjs_vector &c, float r, int slices, int stacks) {
+csgjs_model csgsmodel_sphere(const csgjs_vector &c, CSGJSCPP_REAL r, int slices, int stacks) {
 
     std::vector<csgjs_polygon> polygons;
 
-    auto vertex = [c, r](float theta, float phi) -> csgjs_vertex {
-        theta *= (float)M_PI * 2;
-        phi *= (float)M_PI;
-        csgjs_vector dir(cosf(theta) * sinf(phi), cosf(phi), sinf(theta) * sinf(phi));
+    auto vertex = [c, r](CSGJSCPP_REAL theta, CSGJSCPP_REAL phi) -> csgjs_vertex {
+        theta *= (CSGJSCPP_REAL)M_PI * 2;
+        phi *= (CSGJSCPP_REAL)M_PI;
+        csgjs_vector dir((CSGJSCPP_REAL)cos(theta) * (CSGJSCPP_REAL)sin(phi), (CSGJSCPP_REAL)cos(phi), (CSGJSCPP_REAL)sin(theta) * (CSGJSCPP_REAL)sin(phi));
 
         return csgjs_vertex{c + (dir * r), dir, {0.0f, 0.0f}};
     };
-    for (float i = 0; i < slices; i++) {
-        for (float j = 0; j < stacks; j++) {
+    for (CSGJSCPP_REAL i = 0; i < slices; i++) {
+        for (CSGJSCPP_REAL j = 0; j < stacks; j++) {
 
             std::vector<csgjs_vertex> vertices;
 
@@ -672,7 +673,7 @@ csgjs_model csgsmodel_sphere(const csgjs_vector &c, float r, int slices, int sta
     return csgjs_modelFromPolygons(polygons);
 }
 
-csgjs_model csgsmodel_cyliner(const csgjs_vector &s, const csgjs_vector &e, float r, int slices) {
+csgjs_model csgsmodel_cyliner(const csgjs_vector &s, const csgjs_vector &e, CSGJSCPP_REAL r, int slices) {
 
     csgjs_vector ray = e - s;
 
@@ -686,17 +687,17 @@ csgjs_model csgsmodel_cyliner(const csgjs_vector &s, const csgjs_vector &e, floa
 
     std::vector<csgjs_polygon> polygons;
 
-    auto point = [axisX, axisY, s, r, ray, axisZ](float stack, float slice, float normalBlend) -> csgjs_vertex {
-        float        angle = slice * (float)M_PI * 2;
-        csgjs_vector out = axisX * cosf(angle) + axisY * sinf(angle);
+    auto point = [axisX, axisY, s, r, ray, axisZ](CSGJSCPP_REAL stack, CSGJSCPP_REAL slice, CSGJSCPP_REAL normalBlend) -> csgjs_vertex {
+		CSGJSCPP_REAL        angle = slice * (CSGJSCPP_REAL)M_PI * 2;
+        csgjs_vector out = axisX * (CSGJSCPP_REAL)cos(angle) + axisY * (CSGJSCPP_REAL)sin(angle);
         csgjs_vector pos = s + ray * stack + out * r;
         csgjs_vector normal = out * (1.0f - fabs(normalBlend)) + axisZ * normalBlend;
         return csgjs_vertex{pos, normal};
     };
 
-    for (float i = 0; i < slices; i++) {
-        float t0 = i / slices;
-        float t1 = (i + 1) / slices;
+    for (CSGJSCPP_REAL i = 0; i < slices; i++) {
+		CSGJSCPP_REAL t0 = i / slices;
+		CSGJSCPP_REAL t1 = (i + 1) / slices;
         polygons.push_back(csgjs_polygon({start, point(0, t0, -1), point(0, t1, -1)}));
         polygons.push_back(csgjs_polygon({point(0, t1, 0), point(0, t0, 0), point(1, t0, 0), point(1, t1, 0)}));
         polygons.push_back(csgjs_polygon({end, point(1, t1, 1), point(1, t0, 1)}));
