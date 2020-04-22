@@ -34,3 +34,10 @@ replace std::list with std::deque
     gourd intersect cyl 104212ms
     gourd subtract cyl 192249ms
     cyl subtract gourd 112567ms
+
+remove vector copy from many looping ops.
+
+    gourd union cyl 192250ms
+    gourd intersect cyl 91525ms
+    gourd subtract cyl 159293ms
+    cyl subtract gourd 99925ms

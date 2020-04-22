@@ -396,11 +396,12 @@ std::vector<csgjs_polygon> csgjs_csgnode::clipPolygons(const std::vector<csgjs_p
     clips.push_back(std::make_pair(this, ilist));
     while (clips.size()) {
         const csgjs_csgnode *      me = clips.front().first;
-        std::vector<csgjs_polygon> list = clips.front().second;
-        clips.pop_front();
+        const std::vector<csgjs_polygon> &list = clips.front().second;
+        
 
         if (!me->plane.ok()) {
             result.insert(result.end(), list.begin(), list.end());
+			clips.pop_front();
             continue;
         }
 
@@ -415,6 +416,8 @@ std::vector<csgjs_polygon> csgjs_csgnode::clipPolygons(const std::vector<csgjs_p
 
         if (me->back)
             clips.push_back(std::make_pair(me->back, list_back));
+
+		clips.pop_front();
     }
 
     return result;
@@ -495,8 +498,8 @@ void csgjs_csgnode::build(const std::vector<csgjs_polygon> &ilist) {
 
     while (builds.size()) {
         csgjs_csgnode *            me = builds.front().first;
-        std::vector<csgjs_polygon> list = builds.front().second;
-        builds.pop_front();
+        const std::vector<csgjs_polygon> &list = builds.front().second;
+        
         assert(list.size() > 0 && "logic error");
 
         if (!me->plane.ok())
@@ -517,6 +520,8 @@ void csgjs_csgnode::build(const std::vector<csgjs_polygon> &ilist) {
                 me->back = new csgjs_csgnode;
             builds.push_back(std::make_pair(me->back, list_back));
         }
+
+		builds.pop_front();
     }
 }
 
