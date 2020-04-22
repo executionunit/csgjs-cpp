@@ -3,6 +3,12 @@
 
 #include <fstream>
 
+#if defined(WIN32)
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#endif
+#include <iostream>
+
 namespace exunit {
 
 bool modeltoply(const char *filename, const csgjs_model &model) {
@@ -41,9 +47,53 @@ bool modeltoply(const char *filename, const csgjs_model &model) {
     return false;
 }
 
+struct Timer {
+	Timer() {
+#if defined(WIN32)
+		QueryPerformanceCounter(&mStartingTime);
+#endif
+	}
+
+	/* get the elapsed micro seconds */
+	uint64_t GetElapsedMS()const {
+#if defined(WIN32)
+		LARGE_INTEGER endtime;
+		QueryPerformanceCounter(&endtime);
+
+		LARGE_INTEGER elapsed;
+		elapsed.QuadPart = endtime.QuadPart - mStartingTime.QuadPart;
+
+		elapsed.QuadPart *= 1000000;
+		
+		return elapsed.QuadPart / sFrequency.QuadPart;
+#else
+		return 0;
+#endif
+	}
+
+
+	static void Init() {
+#if defined(WIN32)
+		QueryPerformanceFrequency(&sFrequency);
+#endif
+	}
+
+
+#if defined(WIN32)
+	static LARGE_INTEGER sFrequency;
+	LARGE_INTEGER mStartingTime;
+#endif
+};
+
+#if defined(WIN32)
+LARGE_INTEGER Timer::sFrequency;
+#endif
+
 } // namespace exunit
 
 int main(int /*argc*/, char ** /*arvc*/) {
+
+	exunit::Timer::Init();
 
     /* output a series of PLY files to see if operations work. */
 
@@ -110,10 +160,27 @@ int main(int /*argc*/, char ** /*arvc*/) {
 		auto gourd = csgjs_modelFromPolygons(polygons);
 		auto cyl = csgsmodel_cyliner({0.6f, 0.8f, -0.6f}, {-0.6f, -0.8f, 0.6f}, 0.4f );
 
-		exunit::modeltoply("gourd_union.ply", csgjs_union(gourd, cyl));
-		exunit::modeltoply("gourd_intersect.ply", csgjs_intersection(gourd, cyl));
-		exunit::modeltoply("gourd_subtract.ply", csgjs_subtract(gourd, cyl));
-		exunit::modeltoply("cylinder_subtract_gourd.ply", csgjs_subtract(cyl, gourd));
+		{
+			exunit::Timer t;
+			exunit::modeltoply("gourd_union.ply", csgjs_union(gourd, cyl));
+			std::cout << "gourd union cyl " << t.GetElapsedMS() << "ms" << '\n';
+		}
+		{
+			exunit::Timer t;
+			exunit::modeltoply("gourd_intersect.ply", csgjs_intersection(gourd, cyl));
+			std::cout << "gourd intersect cyl " << t.GetElapsedMS() << "ms" << '\n';
+		}
+
+		{
+			exunit::Timer t;
+			exunit::modeltoply("gourd_subtract.ply", csgjs_subtract(gourd, cyl));
+			std::cout << "gourd subtract cyl " << t.GetElapsedMS() << "ms" << '\n';
+		}
+		{
+			exunit::Timer t;
+			exunit::modeltoply("cylinder_subtract_gourd.ply", csgjs_subtract(cyl, gourd));
+			std::cout << "cyl subtract gourd " << t.GetElapsedMS() << "ms" << '\n';
+		}
     }
 
     return 0;
