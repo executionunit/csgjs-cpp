@@ -112,7 +112,7 @@ csgjs_model csgsmodel_cyliner(const csgjs_vector &s = {0.0f, -1.0f, 0.0f}, const
 /***************************************************************************************************/
 /* implementation below here */
 
-#include <list>
+#include <deque>
 #include <algorithm>
 #include <assert.h>
 #define _USE_MATH_DEFINES
@@ -370,7 +370,7 @@ inline csgjs_csgnode *csg_intersect(const csgjs_csgnode *a1, const csgjs_csgnode
 
 // Convert solid space to empty space and empty space to solid space.
 void csgjs_csgnode::invert() {
-    std::list<csgjs_csgnode *> nodes;
+    std::deque<csgjs_csgnode *> nodes;
     nodes.push_back(this);
     while (nodes.size()) {
         csgjs_csgnode *me = nodes.front();
@@ -392,7 +392,7 @@ void csgjs_csgnode::invert() {
 std::vector<csgjs_polygon> csgjs_csgnode::clipPolygons(const std::vector<csgjs_polygon> &ilist) const {
     std::vector<csgjs_polygon> result;
 
-    std::list<std::pair<const csgjs_csgnode *const, std::vector<csgjs_polygon>>> clips;
+    std::deque<std::pair<const csgjs_csgnode *const, std::vector<csgjs_polygon>>> clips;
     clips.push_back(std::make_pair(this, ilist));
     while (clips.size()) {
         const csgjs_csgnode *      me = clips.front().first;
@@ -423,7 +423,7 @@ std::vector<csgjs_polygon> csgjs_csgnode::clipPolygons(const std::vector<csgjs_p
 // Remove all polygons in this BSP tree that are inside the other BSP tree
 // `bsp`.
 void csgjs_csgnode::clipTo(const csgjs_csgnode *other) {
-    std::list<csgjs_csgnode *> nodes;
+    std::deque<csgjs_csgnode *> nodes;
     nodes.push_back(this);
     while (nodes.size()) {
         csgjs_csgnode *me = nodes.front();
@@ -441,7 +441,7 @@ void csgjs_csgnode::clipTo(const csgjs_csgnode *other) {
 std::vector<csgjs_polygon> csgjs_csgnode::allPolygons() const {
     std::vector<csgjs_polygon> result;
 
-    std::list<const csgjs_csgnode *> nodes;
+    std::deque<const csgjs_csgnode *> nodes;
     nodes.push_back(this);
     while (nodes.size()) {
         const csgjs_csgnode *me = nodes.front();
@@ -460,7 +460,7 @@ std::vector<csgjs_polygon> csgjs_csgnode::allPolygons() const {
 csgjs_csgnode *csgjs_csgnode::clone() const {
     csgjs_csgnode *ret = new csgjs_csgnode();
 
-    std::list<std::pair<const csgjs_csgnode *, csgjs_csgnode *>> nodes;
+    std::deque<std::pair<const csgjs_csgnode *, csgjs_csgnode *>> nodes;
     nodes.push_back(std::make_pair(this, ret));
     while (nodes.size()) {
         const csgjs_csgnode *original = nodes.front().first;
@@ -490,7 +490,7 @@ void csgjs_csgnode::build(const std::vector<csgjs_polygon> &ilist) {
     if (!ilist.size())
         return;
 
-    std::list<std::pair<csgjs_csgnode *, std::vector<csgjs_polygon>>> builds;
+    std::deque<std::pair<csgjs_csgnode *, std::vector<csgjs_polygon>>> builds;
     builds.push_back(std::make_pair(this, ilist));
 
     while (builds.size()) {
@@ -528,9 +528,10 @@ csgjs_csgnode::csgjs_csgnode(const std::vector<csgjs_polygon> &list) : front(0),
 }
 
 csgjs_csgnode::~csgjs_csgnode() {
-    std::list<csgjs_csgnode *> nodes_to_delete;
+    
+	std::deque<csgjs_csgnode *> nodes_to_delete;
+    std::deque<csgjs_csgnode *> nodes_to_disassemble;
 
-    std::list<csgjs_csgnode *> nodes_to_disassemble;
     nodes_to_disassemble.push_back(this);
     while (nodes_to_disassemble.size()) {
         csgjs_csgnode *me = nodes_to_disassemble.front();
@@ -548,7 +549,7 @@ csgjs_csgnode::~csgjs_csgnode() {
         }
     }
 
-    for (std::list<csgjs_csgnode *>::iterator it = nodes_to_delete.begin(); it != nodes_to_delete.end(); ++it)
+    for (auto it = nodes_to_delete.begin(); it != nodes_to_delete.end(); ++it)
         delete *it;
 }
 
