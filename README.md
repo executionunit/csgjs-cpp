@@ -140,5 +140,12 @@ removing this step makes a big difference to performance_
     multiops.ply 145503ms
     multiops_frompolgons.ply 51645ms
     
+** removed the memory leaks **
+
+    gourd union cyl 197228ms
+    gourd intersect cyl 102733ms
+    gourd subtract cyl 159280ms
+    cyl subtract gourd 102508ms
+
 
 thanks, hope this helps someone.

@@ -18,6 +18,8 @@
 
 #include <algorithm>
 #include <vector>
+#include <memory>
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <cstdint>
@@ -332,9 +334,7 @@ inline CSGNode *csg_union(const CSGNode *a1, const CSGNode *b1) {
     a->build(b->allpolygons());
     CSGNode *ret = new CSGNode(a->allpolygons());
     delete a;
-    a = 0;
     delete b;
-    b = 0;
     return ret;
 }
 
@@ -353,9 +353,7 @@ inline CSGNode *csg_subtract(const CSGNode *a1, const CSGNode *b1) {
     a->invert();
     CSGNode *ret = new CSGNode(a->allpolygons());
     delete a;
-    a = 0;
     delete b;
-    b = 0;
     return ret;
 }
 
@@ -373,9 +371,7 @@ inline CSGNode *csg_intersect(const CSGNode *a1, const CSGNode *b1) {
     a->invert();
     CSGNode *ret = new CSGNode(a->allpolygons());
     delete a;
-    a = 0;
     delete b;
-    b = 0;
     return ret;
 }
 
@@ -608,13 +604,9 @@ std::vector<Polygon> csgjs_operation(const std::vector<Polygon> &apoly, const st
     CSGNode A(apoly);
     CSGNode B(bpoly);
 
-    CSGNode *AB = fun(&A, &B);
-    std::vector<Polygon> polys;
-    if(AB){
-         polys = AB->allpolygons();
-        delete AB;
-    }
-    return polys;
+	/* create a unique pointer here so we can delete AB on exit */
+    std::unique_ptr<CSGNode> AB(fun(&A, &B));
+    return AB->allpolygons();
 }
 
 inline std::vector<Polygon> csgjs_operation(const Model &a, const Model &b, csg_function fun) {
