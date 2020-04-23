@@ -609,7 +609,12 @@ std::vector<Polygon> csgjs_operation(const std::vector<Polygon> &apoly, const st
     CSGNode B(bpoly);
 
     CSGNode *AB = fun(&A, &B);
-    return AB->allpolygons();
+    std::vector<Polygon> polys;
+    if(AB){
+         polys = AB->allpolygons();
+        delete AB;
+    }
+    return polys;
 }
 
 inline std::vector<Polygon> csgjs_operation(const Model &a, const Model &b, csg_function fun) {
