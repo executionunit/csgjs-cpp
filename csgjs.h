@@ -155,23 +155,23 @@ std::vector<Polygon> csgintersection(const std::vector<Polygon> &a, const std::v
 std::vector<Polygon> csgsubtract(const std::vector<Polygon> &a, const std::vector<Polygon> &b);
 
 /* API to build a set of polygons representning primatves. */
-std::vector<Polygon> csgspolygon_cube(const Vector &center = {0.0f, 0.0f, 0.0f}, const Vector &dim = {1.0f, 1.0f, 1.0f},
+std::vector<Polygon> csgpolygon_cube(const Vector &center = {0.0f, 0.0f, 0.0f}, const Vector &dim = {1.0f, 1.0f, 1.0f},
                                       const Vector &col = {1.0f, 1.0f, 1.0f});
-std::vector<Polygon> csgspolygon_sphere(const Vector &center = {0.0f, 0.0f, 0.0f}, CSGJSCPP_REAL radius = 1.0f,
+std::vector<Polygon> csgpolygon_sphere(const Vector &center = {0.0f, 0.0f, 0.0f}, CSGJSCPP_REAL radius = 1.0f,
                                         const Vector &col = {1.0f, 1.0f, 1.0f}, int slices = 16, int stacks = 8);
-std::vector<Polygon> csgspolygon_cylinder(const Vector &s = {0.0f, -1.0f, 0.0f}, const Vector &e = {0.0f, 1.0f, 0.0f},
+std::vector<Polygon> csgpolygon_cylinder(const Vector &s = {0.0f, -1.0f, 0.0f}, const Vector &e = {0.0f, 1.0f, 0.0f},
                                           CSGJSCPP_REAL radius = 1.0f, const Vector &col = {1.0f, 1.0f, 1.0f},
                                           int slices = 16);
 
 Model modelfrompolygons(const std::vector<Polygon> &polygons);
 
 /* API to build models representing primatives */
-Model csgsmodel_cube(const Vector &center = {0.0f, 0.0f, 0.0f}, const Vector &dim = {1.0f, 1.0f, 1.0f},
+Model csgmodel_cube(const Vector &center = {0.0f, 0.0f, 0.0f}, const Vector &dim = {1.0f, 1.0f, 1.0f},
                      const Vector &col = {1.0f, 1.0f, 1.0f});
-Model csgsmodel_sphere(const Vector &center = {0.0f, 0.0f, 0.0f}, CSGJSCPP_REAL radius = 1.0f,
+Model csgmodel_sphere(const Vector &center = {0.0f, 0.0f, 0.0f}, CSGJSCPP_REAL radius = 1.0f,
                        const Vector &col = {1.0f, 1.0f, 1.0f}, int slices = 16, int stacks = 8);
 
-Model csgsmodel_cylinder(const Vector &s = {0.0f, -1.0f, 0.0f}, const Vector &e = {0.0f, 1.0f, 0.0f},
+Model csgmodel_cylinder(const Vector &s = {0.0f, -1.0f, 0.0f}, const Vector &e = {0.0f, 1.0f, 0.0f},
                          CSGJSCPP_REAL radius = 1.0f, const Vector &col = {1.0f, 1.0f, 1.0f}, int slices = 16);
 
 } // namespace csgjscpp
@@ -616,7 +616,7 @@ inline std::vector<Polygon> csgjs_operation(const Model &a, const Model &b, csg_
     return csgjs_operation(csgjs_modelToPolygons(a), csgjs_modelToPolygons(b), fun);
 }
 
-std::vector<Polygon> csgspolygon_cube(const Vector &center, const Vector &dim, const Vector &col) {
+std::vector<Polygon> csgpolygon_cube(const Vector &center, const Vector &dim, const Vector &col) {
     struct Quad {
         int    indices[4];
         Vector normal;
@@ -639,12 +639,12 @@ std::vector<Polygon> csgspolygon_cube(const Vector &center, const Vector &dim, c
     return polygons;
 }
 
-Model csgsmodel_cube(const Vector &center, const Vector &dim, const Vector &col) {
+Model csgmodel_cube(const Vector &center, const Vector &dim, const Vector &col) {
 
-    return modelfrompolygons(csgspolygon_cube(center, dim, col));
+    return modelfrompolygons(csgpolygon_cube(center, dim, col));
 }
 
-std::vector<Polygon> csgspolygon_sphere(const Vector &c, CSGJSCPP_REAL r, const Vector &col, int slices, int stacks) {
+std::vector<Polygon> csgpolygon_sphere(const Vector &c, CSGJSCPP_REAL r, const Vector &col, int slices, int stacks) {
     std::vector<Polygon> polygons;
 
     auto mkvertex = [c, r, col](CSGJSCPP_REAL theta, CSGJSCPP_REAL phi) -> Vertex {
@@ -674,12 +674,12 @@ std::vector<Polygon> csgspolygon_sphere(const Vector &c, CSGJSCPP_REAL r, const 
     return polygons;
 }
 
-Model csgsmodel_sphere(const Vector &c, CSGJSCPP_REAL r, const Vector &col, int slices, int stacks) {
+Model csgmodel_sphere(const Vector &c, CSGJSCPP_REAL r, const Vector &col, int slices, int stacks) {
 
-    return modelfrompolygons(csgspolygon_sphere(c, r, col, slices, stacks));
+    return modelfrompolygons(csgpolygon_sphere(c, r, col, slices, stacks));
 }
 
-std::vector<Polygon> csgspolygon_cylinder(const Vector &s, const Vector &e, CSGJSCPP_REAL r, const Vector &col,
+std::vector<Polygon> csgpolygon_cylinder(const Vector &s, const Vector &e, CSGJSCPP_REAL r, const Vector &col,
                                           int slices) {
     Vector ray = e - s;
 
@@ -712,9 +712,9 @@ std::vector<Polygon> csgspolygon_cylinder(const Vector &s, const Vector &e, CSGJ
     return polygons;
 }
 
-Model csgsmodel_cylinder(const Vector &s, const Vector &e, CSGJSCPP_REAL r, const Vector &col, int slices) {
+Model csgmodel_cylinder(const Vector &s, const Vector &e, CSGJSCPP_REAL r, const Vector &col, int slices) {
 
-    return modelfrompolygons(csgspolygon_cylinder(s, e, r, col, slices));
+    return modelfrompolygons(csgpolygon_cylinder(s, e, r, col, slices));
 }
 
 Model csgunion(const Model &a, const Model &b) {

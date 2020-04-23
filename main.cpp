@@ -107,8 +107,8 @@ int main(int /*argc*/, char ** /*arvc*/) {
     /* output a series of PLY files to see if operations work. */
 
     {
-        auto cube1 = csgsmodel_cube();
-        auto cube2 = csgsmodel_cube({1, 0, 0}, {0.8f, 0.8f, 0.8f});
+        auto cube1 = csgmodel_cube();
+        auto cube2 = csgmodel_cube({1, 0, 0}, {0.8f, 0.8f, 0.8f});
 
         auto model = csgsubtract(cube1, cube2);
 
@@ -116,8 +116,8 @@ int main(int /*argc*/, char ** /*arvc*/) {
     }
 
     {
-        auto cube1 = csgsmodel_cube();
-        auto sphere = csgsmodel_sphere({0.5, 0, 0}, 0.8f);
+        auto cube1 = csgmodel_cube();
+        auto sphere = csgmodel_sphere({0.5, 0, 0}, 0.8f);
 
         auto model = csgsubtract(cube1, sphere);
 
@@ -125,8 +125,8 @@ int main(int /*argc*/, char ** /*arvc*/) {
     }
 
     {
-        auto cube1 = csgsmodel_cube();
-        auto cylinder = csgsmodel_cylinder({0.0, -1, 0}, {0.0, 1.0, 0}, 0.8f);
+        auto cube1 = csgmodel_cube();
+        auto cylinder = csgmodel_cylinder({0.0, -1, 0}, {0.0, 1.0, 0}, 0.8f);
 
         auto model = csgsubtract(cube1, cylinder);
 
@@ -136,11 +136,11 @@ int main(int /*argc*/, char ** /*arvc*/) {
     {
 		exunit::Timer t;
 
-        auto a = csgsmodel_cube({0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, white);
-        auto b = csgsmodel_sphere({0, 0, 0}, 1.35f, white, 16);
-        auto c = csgsmodel_cylinder({-1, 0, 0}, {1, 0, 0}, 0.7f, red);
-        auto d = csgsmodel_cylinder({0, -1, 0}, {0, 1, 0}, 0.7f, green);
-        auto e = csgsmodel_cylinder({0, 0, -1}, {0, 0, 1}, 0.7f, blue);
+        auto a = csgmodel_cube({0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, white);
+        auto b = csgmodel_sphere({0, 0, 0}, 1.35f, white, 16);
+        auto c = csgmodel_cylinder({-1, 0, 0}, {1, 0, 0}, 0.7f, red);
+        auto d = csgmodel_cylinder({0, -1, 0}, {0, 1, 0}, 0.7f, green);
+        auto e = csgmodel_cylinder({0, 0, -1}, {0, 0, 1}, 0.7f, blue);
 
         // a.intersect(b).subtract(c.union(d).union(e))
         auto model = csgsubtract(csgintersection(a, b), csgunion(csgunion(c, d), e));
@@ -151,11 +151,11 @@ int main(int /*argc*/, char ** /*arvc*/) {
 	{
 		exunit::Timer t;
 
-		auto a = csgspolygon_cube({ 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, white);
-		auto b = csgspolygon_sphere({ 0, 0, 0 }, 1.35f, white, 16);
-		auto c = csgspolygon_cylinder({ -1, 0, 0 }, { 1, 0, 0 }, 0.7f, red);
-		auto d = csgspolygon_cylinder({ 0, -1, 0 }, { 0, 1, 0 }, 0.7f, green);
-		auto e = csgspolygon_cylinder({ 0, 0, -1 }, { 0, 0, 1 }, 0.7f, blue);
+		auto a = csgpolygon_cube({ 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, white);
+		auto b = csgpolygon_sphere({ 0, 0, 0 }, 1.35f, white, 16);
+		auto c = csgpolygon_cylinder({ -1, 0, 0 }, { 1, 0, 0 }, 0.7f, red);
+		auto d = csgpolygon_cylinder({ 0, -1, 0 }, { 0, 1, 0 }, 0.7f, green);
+		auto e = csgpolygon_cylinder({ 0, 0, -1 }, { 0, 0, 1 }, 0.7f, blue);
 
 		// a.intersect(b).subtract(c.union(d).union(e))
 		auto polygons = csgsubtract(csgintersection(a, b), csgunion(csgunion(c, d), e));
@@ -186,7 +186,7 @@ int main(int /*argc*/, char ** /*arvc*/) {
         }
 
         auto gourd = modelfrompolygons(polygons);
-        auto cyl = csgsmodel_cylinder({0.6f, 0.8f, -0.6f}, {-0.6f, -0.8f, 0.6f}, 0.4f, blue);
+        auto cyl = csgmodel_cylinder({0.6f, 0.8f, -0.6f}, {-0.6f, -0.8f, 0.6f}, 0.4f, blue);
 
         {
             exunit::Timer t;
