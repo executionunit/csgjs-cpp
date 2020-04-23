@@ -132,4 +132,13 @@ least we ask the compiler to inline them)_
     gourd subtract cyl 155356ms
     cyl subtract gourd 103044ms
 
+**using polygons until a model is required.**
+
+_The code converts from a set of polygons to a model and then to polygons for every operation.
+removing this step makes a big difference to performance_
+
+    multiops.ply 145503ms
+    multiops_frompolgons.ply 51645ms
+    
+
 thanks, hope this helps someone.
