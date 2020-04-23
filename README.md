@@ -1,6 +1,6 @@
 # csgjs-cpp
 
-_Modification of work by dabroz who ported the Javascript code to cpp. https://github.com/evanw/csg.js/._
+_Building on the work by [dabroz](https://github.com/dabroz/csgjs-cpp) who ported the [Javascript](https://github.com/evanw/csg.js/) code to cpp._
 
 **C**onstructive **S**olid **G**eometry **J**ava**S**cript **C** **P**lus **P**lus.
 
@@ -17,7 +17,7 @@ The main.cpp file has a simple `Timer` class that only works on windows. Annoyin
 
 # Building
 
-The code uses CMake (version 3.16 or greater). I've tested building on Windows, Linux and macOS. Performance measurements are only done on Windows.
+The code uses CMake (version 3.14 or greater). I've tested building on Windows, Linux and macOS. Performance measurements are only done on Windows (see Timer comment above).
 
 # Running
 
