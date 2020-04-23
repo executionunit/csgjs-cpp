@@ -531,10 +531,10 @@ void CSGNode::build(const std::vector<Polygon> &ilist) {
     }
 }
 
-CSGNode::CSGNode() : front(0), back(0) {
+CSGNode::CSGNode() : front(nullptr), back(nullptr) {
 }
 
-CSGNode::CSGNode(const std::vector<Polygon> &list) : front(0), back(0) {
+CSGNode::CSGNode(const std::vector<Polygon> &list) : front(nullptr), back(nullptr) {
     build(list);
 }
 
@@ -566,7 +566,7 @@ CSGNode::~CSGNode() {
 
 // Public interface implementation
 
-inline std::vector<Polygon> csgjs_modelToPolygons(const Model &model) {
+inline std::vector<Polygon> modeltopolygons(const Model &model) {
     std::vector<Polygon> list;
     for (size_t i = 0; i < model.indices.size(); i += 3) {
         std::vector<Vertex> triangle;
@@ -610,7 +610,7 @@ std::vector<Polygon> csgjs_operation(const std::vector<Polygon> &apoly, const st
 }
 
 inline std::vector<Polygon> csgjs_operation(const Model &a, const Model &b, csg_function fun) {
-    return csgjs_operation(csgjs_modelToPolygons(a), csgjs_modelToPolygons(b), fun);
+    return csgjs_operation(modeltopolygons(a), modeltopolygons(b), fun);
 }
 
 std::vector<Polygon> csgpolygon_cube(const Vector &center, const Vector &dim, const Vector &col) {
