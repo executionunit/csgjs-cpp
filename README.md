@@ -65,6 +65,7 @@ List of changes from the initial port:
 * move all the code in to the csgjscpp namespace and cleanup the names to be consistent.
 * applied clang formatting (see .clang-format).
 * Added some basic optimizations speeding it up by ~40% (non scientific measurements of course).
+* Replace `std::vector` etc with macros which can be defined before inclusion. This means I can use eastl::vector in other projects (or any type that matches the API for std::vector). This is really ugly but it's the easiest way to override these classes without playing with `using namespace eastl` and it being "less than obvious which class is used.
 
 ## Perf notes
 
@@ -149,5 +150,14 @@ _cleaning up memory, alas, slows down the code, sigh._
     gourd subtract cyl 159280ms
     cyl subtract gourd 102508ms
 
+
+**color now uint32_t macros for std types so they can be replaced**
+
+_despite smaller size for Vertex this is slightly slower, not sure why. The macros make no real change despite being as ugly as all hell._
+
+    gourd union cyl 198833ms
+    gourd intersect cyl 108943ms
+    gourd subtract cyl 170563ms
+    cyl subtract gourd 111943ms
 
 thanks, hope this helps someone.

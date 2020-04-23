@@ -39,8 +39,8 @@ bool modeltoply(const char *filename, const Model &model) {
 
         for (const auto &v : model.vertices) {
             stream << v.pos.x << " " << v.pos.y << " " << v.pos.z << " " << v.normal.x << " " << v.normal.y << " "
-                   << v.normal.z << " " << (int)(v.col.x * 255) << " " << (int)(v.col.y * 255) << " "
-                   << (int)(v.col.z * 255) << " " << '\n';
+                   << v.normal.z << " " << (int)((v.col & 0xFF0000) >> 16) << " " << (int)((v.col & 0x00FF00) >> 8)
+                   << " " << (int)(v.col & 0x0000FF) << " " << '\n';
         }
 
         for (size_t idx = 2; idx < model.indices.size(); idx += 3) {
@@ -99,10 +99,10 @@ int main(int /*argc*/, char ** /*arvc*/) {
 
     exunit::Timer::Init();
 
-    Vector red(1.0f, 0.0f, 0.0f);
-    Vector green(0.0f, 1.0f, 0.0f);
-    Vector blue(0.0f, 0.0f, 1.0f);
-    Vector white(1.0f, 1.0f, 1.0f);
+    uint32_t red = 0xFF0000;
+    uint32_t green = 0x00FF00;
+    uint32_t blue = 0x0000FF;
+    uint32_t white = 0xFFFFFF;
 
     /* output a series of PLY files to see if operations work. */
 
@@ -134,7 +134,7 @@ int main(int /*argc*/, char ** /*arvc*/) {
     }
 
     {
-		exunit::Timer t;
+        exunit::Timer t;
 
         auto a = csgmodel_cube({0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, white);
         auto b = csgmodel_sphere({0, 0, 0}, 1.35f, white, 16);
@@ -144,25 +144,25 @@ int main(int /*argc*/, char ** /*arvc*/) {
 
         // a.intersect(b).subtract(c.union(d).union(e))
         auto model = csgsubtract(csgintersection(a, b), csgunion(csgunion(c, d), e));
-		std::cout << "multiops.ply " << t.GetElapsedMS() << "ms" << '\n';
+        std::cout << "multiops.ply " << t.GetElapsedMS() << "ms" << '\n';
         exunit::modeltoply("multiops.ply", model);
     }
 
-	{
-		exunit::Timer t;
+    {
+        exunit::Timer t;
 
-		auto a = csgpolygon_cube({ 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, white);
-		auto b = csgpolygon_sphere({ 0, 0, 0 }, 1.35f, white, 16);
-		auto c = csgpolygon_cylinder({ -1, 0, 0 }, { 1, 0, 0 }, 0.7f, red);
-		auto d = csgpolygon_cylinder({ 0, -1, 0 }, { 0, 1, 0 }, 0.7f, green);
-		auto e = csgpolygon_cylinder({ 0, 0, -1 }, { 0, 0, 1 }, 0.7f, blue);
+        auto a = csgpolygon_cube({0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, white);
+        auto b = csgpolygon_sphere({0, 0, 0}, 1.35f, white, 16);
+        auto c = csgpolygon_cylinder({-1, 0, 0}, {1, 0, 0}, 0.7f, red);
+        auto d = csgpolygon_cylinder({0, -1, 0}, {0, 1, 0}, 0.7f, green);
+        auto e = csgpolygon_cylinder({0, 0, -1}, {0, 0, 1}, 0.7f, blue);
 
-		// a.intersect(b).subtract(c.union(d).union(e))
-		auto polygons = csgsubtract(csgintersection(a, b), csgunion(csgunion(c, d), e));
-		auto model = modelfrompolygons(polygons);
-		std::cout << "multiops_frompolgons.ply " << t.GetElapsedMS() << "ms" << '\n';
-		exunit::modeltoply("multiops_frompolygons.ply", model);
-	}
+        // a.intersect(b).subtract(c.union(d).union(e))
+        auto polygons = csgsubtract(csgintersection(a, b), csgunion(csgunion(c, d), e));
+        auto model = modelfrompolygons(polygons);
+        std::cout << "multiops_frompolgons.ply " << t.GetElapsedMS() << "ms" << '\n';
+        exunit::modeltoply("multiops_frompolygons.ply", model);
+    }
 
     {
         // clang-format off
