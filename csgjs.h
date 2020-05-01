@@ -174,8 +174,11 @@ struct Polygon {
 };
 
 struct Model {
+
+	using Index = uint16_t;
+
     CSGJSCPP_VECTOR<Vertex>   vertices;
-    CSGJSCPP_VECTOR<uint16_t> indices;
+    CSGJSCPP_VECTOR<Index> indices;
 };
 
 // public interface - not super efficient, if you use multiple CSG operations you should
