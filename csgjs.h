@@ -72,6 +72,14 @@ struct Vector {
     }
 };
 
+inline bool approxequal(float a, float b) {
+	return fabs(a - b) < csgjs_EPSILON;
+}
+
+inline bool operator==(const Vector &a, const Vector &b) {
+    return approxequal(a.x, b.x) && approxequal(a.y, b.y) && approxequal(a.z, b.z);
+}
+
 // Vector implementation
 
 inline Vector operator+(const Vector &a, const Vector &b) {
@@ -118,6 +126,10 @@ struct Vertex {
     Vector   normal;
     uint32_t col;
 };
+
+inline bool operator==(const Vertex &a, const Vertex &b) {
+    return a.pos == b.pos && a.normal == b.normal && a.col == b.col;
+}
 
 struct Polygon;
 
@@ -175,10 +187,22 @@ struct Polygon {
 
 struct Model {
 
-	using Index = uint16_t;
+    using Index = uint16_t;
 
-    CSGJSCPP_VECTOR<Vertex>   vertices;
-    CSGJSCPP_VECTOR<Index> indices;
+    CSGJSCPP_VECTOR<Vertex> vertices;
+    CSGJSCPP_VECTOR<Index>  indices;
+
+    Index AddVertex(const Vertex &newv) {
+        Index i = 0;
+        for (const auto &v : vertices) {
+            if (v == newv) {
+                return i;
+            }
+            ++i;
+        }
+        vertices.push_back(newv);
+        return i;
+    }
 };
 
 // public interface - not super efficient, if you use multiple CSG operations you should
@@ -617,17 +641,24 @@ inline CSGJSCPP_VECTOR<Polygon> modeltopolygons(const Model &model) {
 }
 
 Model modelfrompolygons(const CSGJSCPP_VECTOR<Polygon> &polygons) {
-    Model    model;
-    uint16_t p = 0;
+    Model model;
+
     for (size_t i = 0; i < polygons.size(); i++) {
         const Polygon &poly = polygons[i];
-        for (size_t j = 2; j < poly.vertices.size(); j++) {
-            model.vertices.push_back(poly.vertices[0]);
-            model.indices.push_back(p++);
-            model.vertices.push_back(poly.vertices[j - 1]);
-            model.indices.push_back(p++);
-            model.vertices.push_back(poly.vertices[j]);
-            model.indices.push_back(p++);
+
+        if (poly.vertices.size()) {
+
+            Model::Index a = model.AddVertex(poly.vertices[0]);
+
+            for (size_t j = 2; j < poly.vertices.size(); j++) {
+
+                Model::Index b = model.AddVertex(poly.vertices[j - 1]);
+                Model::Index c = model.AddVertex(poly.vertices[j]);
+
+                model.indices.push_back(a);
+                model.indices.push_back(b);
+                model.indices.push_back(c);
+            }
         }
     }
     return model;

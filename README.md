@@ -160,4 +160,33 @@ _despite smaller size for Vertex this is slightly slower, not sure why. The macr
     gourd subtract cyl 170563ms
     cyl subtract gourd 111943ms
 
+**Optimize vertices when building a model**
+
+_When building a model, look for similar vertices so we don't store duplicate vertices. Interestingly
+this also speeds up the processing as there is less data to iterate through._
+
+_before_
+
+    cube_subtract_cube.ply faces: 62 vertices:186
+    cube_subtract_sphere.ply faces: 686 vertices:2058
+    cube_subtract_cylinder.ply faces: 146 vertices:438
+    multiops.ply 149895ms faces: 3104 vertices:9312
+    multiops_frompolgons.ply 58230ms faces: 1468 vertices:4404
+    gourd union cyl 191450ms
+    gourd intersect cyl 104819ms
+    gourd subtract cyl 162605ms
+    cyl subtract gourd 103615ms
+
+_after_
+
+    cube_subtract_cube.ply faces: 62 vertices:78
+    cube_subtract_sphere.ply faces: 686 vertices:559
+    cube_subtract_cylinder.ply faces: 146 vertices:162
+    multiops.ply 183729ms faces: 3104 vertices:2173
+    multiops_frompolgons.ply 61491ms faces: 1468 vertices:1212
+    gourd union cyl 152810ms
+    gourd intersect cyl 68029ms
+    gourd subtract cyl 118275ms
+    cyl subtract gourd 77234ms
+
 thanks, hope this helps someone.

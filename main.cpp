@@ -111,7 +111,7 @@ int main(int /*argc*/, char ** /*arvc*/) {
         auto cube2 = csgmodel_cube({1, 0, 0}, {0.8f, 0.8f, 0.8f});
 
         auto model = csgsubtract(cube1, cube2);
-
+		std::cout << "cube_subtract_cube.ply faces: " << model.indices.size() / 3 << " vertices:" << model.vertices.size() << '\n';
         exunit::modeltoply("cube_subtract_cube.ply", model);
     }
 
@@ -120,7 +120,7 @@ int main(int /*argc*/, char ** /*arvc*/) {
         auto sphere = csgmodel_sphere({0.5, 0, 0}, 0.8f);
 
         auto model = csgsubtract(cube1, sphere);
-
+		std::cout << "cube_subtract_sphere.ply faces: " << model.indices.size() / 3 << " vertices:" << model.vertices.size() << '\n';
         exunit::modeltoply("cube_subtract_sphere.ply", model);
     }
 
@@ -129,7 +129,7 @@ int main(int /*argc*/, char ** /*arvc*/) {
         auto cylinder = csgmodel_cylinder({0.0, -1, 0}, {0.0, 1.0, 0}, 0.8f);
 
         auto model = csgsubtract(cube1, cylinder);
-
+		std::cout << "cube_subtract_cylinder.ply faces: " << model.indices.size() / 3 << " vertices:" << model.vertices.size() << '\n';
         exunit::modeltoply("cube_subtract_cylinder.ply", model);
     }
 
@@ -144,7 +144,7 @@ int main(int /*argc*/, char ** /*arvc*/) {
 
         // a.intersect(b).subtract(c.union(d).union(e))
         auto model = csgsubtract(csgintersection(a, b), csgunion(csgunion(c, d), e));
-        std::cout << "multiops.ply " << t.GetElapsedMS() << "ms" << '\n';
+        std::cout << "multiops.ply " << t.GetElapsedMS() << "ms faces: " << model.indices.size() / 3 << " vertices:" << model.vertices.size() << '\n';
         exunit::modeltoply("multiops.ply", model);
     }
 
@@ -160,7 +160,7 @@ int main(int /*argc*/, char ** /*arvc*/) {
         // a.intersect(b).subtract(c.union(d).union(e))
         auto polygons = csgsubtract(csgintersection(a, b), csgunion(csgunion(c, d), e));
         auto model = modelfrompolygons(polygons);
-        std::cout << "multiops_frompolgons.ply " << t.GetElapsedMS() << "ms" << '\n';
+        std::cout << "multiops_frompolgons.ply " << t.GetElapsedMS() << "ms faces: " << model.indices.size() / 3 << " vertices:" << model.vertices.size() << '\n';
         exunit::modeltoply("multiops_frompolygons.ply", model);
     }
 
