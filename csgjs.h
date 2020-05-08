@@ -72,7 +72,7 @@ struct Vector {
     }
 };
 
-inline bool approxequal(float a, float b) {
+inline bool approxequal(CSGJSCPP_REAL a, CSGJSCPP_REAL b) {
 	return fabs(a - b) < csgjs_EPSILON;
 }
 

@@ -6,6 +6,7 @@ set(CSGJS_SRCS
     main.cpp
 	checkimpl.cpp
     csgjs.h
+	mycsgjs.h
 )
 
 add_executable(csgjs ${CSGJS_SRCS})

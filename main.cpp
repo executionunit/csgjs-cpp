@@ -1,5 +1,5 @@
 
-#include "csgjs.h"
+#include "mycsgjs.h"
 
 #include <fstream>
 
