@@ -187,7 +187,7 @@ struct Polygon {
 
 struct Model {
 
-    using Index = uint16_t;
+    using Index = uint32_t;
 
     CSGJSCPP_VECTOR<Vertex> vertices;
     CSGJSCPP_VECTOR<Index>  indices;
