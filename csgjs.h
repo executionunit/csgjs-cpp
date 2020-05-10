@@ -73,7 +73,7 @@ struct Vector {
 };
 
 inline bool approxequal(CSGJSCPP_REAL a, CSGJSCPP_REAL b) {
-	return fabs(a - b) < csgjs_EPSILON;
+    return fabs(a - b) < csgjs_EPSILON;
 }
 
 inline bool operator==(const Vector &a, const Vector &b) {
@@ -106,6 +106,11 @@ inline Vector negate(const Vector &a) {
 inline CSGJSCPP_REAL length(const Vector &a) {
     return (CSGJSCPP_REAL)sqrt(dot(a, a));
 }
+
+inline CSGJSCPP_REAL lengthsquared(const Vector &a) {
+    return dot(a, a);
+}
+
 inline Vector unit(const Vector &a) {
     return a / length(a);
 }
@@ -655,9 +660,11 @@ Model modelfrompolygons(const CSGJSCPP_VECTOR<Polygon> &polygons) {
                 Model::Index b = model.AddVertex(poly.vertices[j - 1]);
                 Model::Index c = model.AddVertex(poly.vertices[j]);
 
-                model.indices.push_back(a);
-                model.indices.push_back(b);
-                model.indices.push_back(c);
+                if (a != b && b != c && c != a) {
+                    model.indices.push_back(a);
+                    model.indices.push_back(b);
+                    model.indices.push_back(c);
+                }
             }
         }
     }
