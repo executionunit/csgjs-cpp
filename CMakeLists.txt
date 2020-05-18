@@ -11,14 +11,12 @@ set(CSGJS_SRCS
 	mycsgjs.h
 )
 
+set(TEST_CSGJS_SRCS test_csgjscpp.cpp checkimpl.cpp)
+
 add_subdirectory(tp)
 
 add_executable(csgjs ${CSGJS_SRCS})
 
-target_link_libraries(csgjs meshoptimizer)
-if(CSGJS_TEST_MESHOPTIMIZER)
-	target_compile_definitions(csgjs PRIVATE CSGJS_TEST_MESHOPTIMIZER)
-endif()
 if(MSVC)
   target_compile_options(csgjs PRIVATE /W4 /WX)
 else()
@@ -32,3 +30,18 @@ add_custom_target (MiscFiles SOURCES
 	.clang-tidy
 	.gitignore
 )
+
+
+if(CSGJS_TEST_MESHOPTIMIZER)
+	target_link_libraries(csgjs meshoptimizer)
+	target_compile_definitions(csgjs PRIVATE CSGJS_TEST_MESHOPTIMIZER)
+endif()
+
+add_executable(testcsgjs ${TEST_CSGJS_SRCS})
+target_link_libraries(testcsgjs doctest::doctest)
+
+if(MSVC)
+  target_compile_options(testcsgjs PRIVATE /W4 /WX)
+else()
+  target_compile_options(testcsgjs PRIVATE -Wall -Wextra -pedantic -Werror)
+endif()

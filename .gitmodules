@@ -1,3 +1,6 @@
 [submodule "tp/meshoptimizer"]
 	path = tp/meshoptimizer
 	url = https://github.com/zeux/meshoptimizer
+[submodule "tp/doctest"]
+	path = tp/doctest
+	url = https://github.com/onqtam/doctest

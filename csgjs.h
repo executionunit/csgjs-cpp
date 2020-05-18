@@ -57,6 +57,15 @@
 #define CSGJSCPP_UNIQUEPTR std::unique_ptr
 #endif
 
+#if !defined(CSGJSCPP_MAP)
+#include <map>
+#define CSGJSCPP_MAP std::map
+#endif
+
+#if !defined(CSGJSCPP_FIND_IF)
+#define CSGJSCPP_FIND_IF std::find_if
+#endif
+
 namespace csgjscpp {
 
 // `CSG.Plane.EPSILON` is the tolerance used by `splitPolygon()` to decide if a
@@ -79,6 +88,11 @@ inline bool approxequal(CSGJSCPP_REAL a, CSGJSCPP_REAL b) {
 inline bool operator==(const Vector &a, const Vector &b) {
     return approxequal(a.x, b.x) && approxequal(a.y, b.y) && approxequal(a.z, b.z);
 }
+
+inline bool operator!=(const Vector &a, const Vector &b) {
+	return !approxequal(a.x, b.x) || !approxequal(a.y, b.y) || !approxequal(a.z, b.z);
+}
+
 
 // Vector implementation
 
@@ -135,6 +149,11 @@ struct Vertex {
 inline bool operator==(const Vertex &a, const Vertex &b) {
     return a.pos == b.pos && a.normal == b.normal && a.col == b.col;
 }
+
+inline bool operator!=(const Vertex &a, const Vertex &b) {
+	return a.pos != b.pos || a.normal != b.normal || a.col != b.col;
+}
+
 
 struct Polygon;
 
@@ -230,6 +249,8 @@ CSGJSCPP_VECTOR<Polygon> csgpolygon_sphere(const Vector &center = {0.0f, 0.0f, 0
 CSGJSCPP_VECTOR<Polygon> csgpolygon_cylinder(const Vector &s = {0.0f, -1.0f, 0.0f},
                                              const Vector &e = {0.0f, 1.0f, 0.0f}, CSGJSCPP_REAL radius = 1.0f,
                                              const uint32_t col = 0xFFFFFF, int slices = 16);
+
+CSGJSCPP_VECTOR<Polygon> csgfixtjunc(const CSGJSCPP_VECTOR<Polygon> &polygons);
 
 Model modelfrompolygons(const CSGJSCPP_VECTOR<Polygon> &polygons);
 
@@ -812,6 +833,426 @@ CSGJSCPP_VECTOR<Polygon> csgintersection(const CSGJSCPP_VECTOR<Polygon> &a, cons
 CSGJSCPP_VECTOR<Polygon> csgsubtract(const CSGJSCPP_VECTOR<Polygon> &a, const CSGJSCPP_VECTOR<Polygon> &b) {
     return csgjs_operation(a, b, csg_subtract);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <class CONTTYPE, class T> 
+bool contains(CONTTYPE &cont, const T &t){return cont.find(t) != cont.end();}
+
+
+template <class CONTTYPE, class T>
+typename CONTTYPE::iterator find(CONTTYPE &cont, const T &t);
+
+template <class T, typename... Ks>
+typename CSGJSCPP_MAP<Ks...>::iterator find(CSGJSCPP_MAP<Ks...>& cont, const T &t){ return cont.find(t); }
+
+template <typename T>
+typename CSGJSCPP_VECTOR<T>::iterator find(CSGJSCPP_VECTOR<T>& cont, const T &t) { return std::find(cont.begin(), cont.end(), t); }
+
+
+//template <typename CONTTYPE, typename T>
+//void remove(CONTTYPE &cont, const T &t);
+
+
+template <typename T>
+void remove(CSGJSCPP_VECTOR<T> &cont, const T &t){
+	auto i = find(cont, t);
+	if (i != cont.end()) {
+		cont.erase(i);
+	}
+}
+
+template <typename T, typename... Ks>
+void remove(CSGJSCPP_MAP<Ks...> &cont, const T &t) {
+	auto i = cont.find(t);
+	if (i != cont.end()) {
+		cont.erase(i);
+	}
+}
+
+
+const int kInvalidPolygonIndex = -1;
+
+using Tag = size_t;
+//Tag GetTag (const Vertex &v) {
+//	return (Tag)&v; 
+//};
+
+using SideTag = CSGJSCPP_PAIR< Tag, Tag>;
+bool operator==(const SideTag &a, const SideTag &b) {
+	return a.first == b.first && a.second == b.second;
+}
+
+// transcibed from 
+// https://github.com/jscad/csg.js/blob/6be72558e47355d59091d5684f3c4ed853476404/csg.js#L1090
+/*
+fixTJunctions:
+Suppose we have two polygons ACDB and EDGF:
+    A-----B
+    |     |
+    |     E--F
+    |     |  |
+    C-----D--G
+Note that vertex E forms a T-junction on the side BD. In this case some STL slicers will complain
+that the solid is not watertight. This is because the watertightness check is done by checking if
+each side DE is matched by another side ED.
+This function will return a new solid with ACDB replaced by ACDEB
+Note that this can create polygons that are slightly non-convex (due to rounding errors). Therefore the result should
+not be used for further CSG operations!
+*/
+ CSGJSCPP_VECTOR<Polygon> csgfixtjunc(const CSGJSCPP_VECTOR<Polygon> &originalpolygons){
+    
+
+	 //were going to need unique vertices so while we're at it
+	 //create a list of unique vertices and a list of polygons
+	 //with indexes into this list, we can use those indexes as
+	 //unique vertex id's in the core of the algo.
+	 struct IndexedVertex {
+		 Vertex vertex;
+		 size_t index; //index in to the vextor this vertex is in, also used as the unique tag.
+	 };
+
+    
+    struct Side {
+        const IndexedVertex *vertex0;
+        const IndexedVertex *vertex1;
+        int polygonindex;
+    };
+
+    
+	CSGJSCPP_VECTOR<IndexedVertex> uvertices;
+
+	struct IndexPolygon {
+		CSGJSCPP_VECTOR<size_t> vertexindex;
+	};
+	CSGJSCPP_VECTOR<IndexPolygon> polygons;
+	for (const auto &originalpoly : originalpolygons) {
+		IndexPolygon ipoly;
+		for (const auto &v : originalpoly.vertices) {
+			auto pos = CSGJSCPP_FIND_IF(uvertices.begin(), uvertices.end(), [v](const IndexedVertex &a) {return a.vertex == v; });
+			if (pos != uvertices.end()) {
+				size_t index = pos - uvertices.begin();
+				ipoly.vertexindex.push_back(index);
+			} else {
+				size_t index = uvertices.size();
+				ipoly.vertexindex.push_back(index);
+				uvertices.push_back({ v, index});
+			}
+		}
+		polygons.push_back(ipoly);
+	}
+
+	/* side map contains all sides that don't have a matching opposite
+	* side AB is removed of a side BA is in the map for example.
+	*/
+    CSGJSCPP_MAP<SideTag, CSGJSCPP_VECTOR<Side>> sidemap = {};
+
+    for (int polygonindex = 0; polygonindex < (int)polygons.size(); polygonindex++) {
+        auto &polygon = polygons[polygonindex];
+        size_t numvertices = polygon.vertexindex.size();
+        if (numvertices < 3) { // should be true
+            continue;
+        }
+    
+		IndexedVertex *vertex = &uvertices[polygon.vertexindex[0]];
+		Tag vertextag = vertex->index;
+        for (size_t vertexindex = 0; vertexindex < numvertices; vertexindex++) {
+            size_t nextvertexindex = vertexindex + 1;
+            if (nextvertexindex == numvertices) {
+                nextvertexindex = 0;
+            }
+   
+			IndexedVertex *nextvertex = &uvertices[polygon.vertexindex[nextvertexindex]];
+			Tag nextvertextag = nextvertex->index;
+            auto sidetag = CSGJSCPP_MAKEPAIR(vertextag, nextvertextag);
+			auto reversesidetag = CSGJSCPP_MAKEPAIR(nextvertextag, vertextag);
+
+			auto sidemappos = sidemap.find(reversesidetag);
+			if (sidemappos != sidemap.end()) {
+				// this side matches the same side in another polygon. Remove from sidemap:
+				// NOTE: dazza hmm not sre about just popping back here but the JS does splice(-1, 1) on it's array
+				auto &ar = sidemappos->second;
+				ar.pop_back();
+				if (ar.size() == 0) {
+					sidemap.erase(sidemappos);
+				}
+
+			} else {
+				sidemap[sidetag].push_back({ vertex, nextvertex, polygonindex });
+
+				//var sideobj = {
+				//    vertex0: vertex,
+				//    vertex1 : nextvertex,
+				//    polygonindex : polygonindex
+				//};
+				//if (!(sidetag in sidemap)) {
+				//    sidemap[sidetag] = [sideobj];
+				//} else {
+				//    sidemap[sidetag].push(sideobj);
+				//}
+			}
+			vertex = nextvertex;
+			vertextag = nextvertextag;
+		}
+	}
+
+	// now sidemap contains 'unmatched' sides 
+	// i.e. side AB in one polygon does not have a matching side BA in another polygon
+
+	//all sides that have vertex tag as it's start
+	CSGJSCPP_MAP<Tag, CSGJSCPP_VECTOR<SideTag> >vertextag2sidestart;
+	//all sides that have vertex tag as it's end.
+	CSGJSCPP_MAP<Tag, CSGJSCPP_VECTOR<SideTag> >vertextag2sideend;
+	CSGJSCPP_DEQUE<SideTag> sidestocheck;;
+	bool sidemapisempty = true;
+	for (const auto &iter : sidemap) {
+		const SideTag &sidetag = iter.first;
+		const CSGJSCPP_VECTOR<Side>& sideobjs = iter.second;
+
+		sidemapisempty = false;
+		sidestocheck.push_back(sidetag);
+
+		for (auto &sideobj : sideobjs) {
+			Tag starttag = sideobj.vertex0->index;
+			Tag endtag = sideobj.vertex1->index;
+			vertextag2sidestart[starttag].push_back(sidetag);
+			//if (starttag in vertextag2sidestart) {
+			//    vertextag2sidestart[starttag].push(sidetag);
+			//} else {
+			//    vertextag2sidestart[starttag] = [sidetag];
+			//}
+			vertextag2sideend[endtag].push_back(sidetag);
+			//if (endtag in vertextag2sideend) {
+			//    vertextag2sideend[endtag].push(sidetag);
+			//} else {
+			//    vertextag2sideend[endtag] = [sidetag];
+			//}
+		}
+	}
+
+	// make a copy of the polygons array, since we are going to modify it:
+	//auto polygons = inpolygons;
+	if (!sidemapisempty) {
+
+		auto deleteSide = [&sidemap, &vertextag2sidestart, &vertextag2sideend](const IndexedVertex &vertex0, const IndexedVertex &vertex1, int polygonindex) {
+			auto starttag = vertex0.index;
+			auto endtag = vertex1.index;
+			auto sidetag = CSGJSCPP_MAKEPAIR(starttag, endtag);
+			// console.log("deleteSide("+sidetag+")");
+			assert(contains(sidemap, sidetag) && "logic error");
+
+			//todo this is better done with an iterator probably.
+			int idx = -1;
+			auto sideobjs = sidemap.at(sidetag);
+			for (size_t i = 0; i < sideobjs.size(); i++) {
+				auto &sideobj = sideobjs[i];
+				if (sideobj.vertex0->index != vertex0.index) continue;
+				if (sideobj.vertex1->index != vertex1.index) continue;
+				if (polygonindex != kInvalidPolygonIndex) {
+					if (sideobj.polygonindex != polygonindex) continue;
+				}
+				idx = (int)i;
+				break;
+			}
+			assert(idx >= 0 && "logic error");
+			sideobjs.erase(sideobjs.begin() + idx);
+			if (sideobjs.size() == 0) {
+				remove(sidemap, sidetag);
+			}
+			auto siter = find(vertextag2sidestart[starttag], sidetag);
+			assert(siter != vertextag2sidestart[starttag].end() && "logic error");
+			vertextag2sidestart[starttag].erase(siter);
+			if (vertextag2sidestart[starttag].size() == 0) {
+				remove(vertextag2sidestart, starttag);
+			}
+			auto eiter = find(vertextag2sideend[endtag], sidetag);
+			assert(eiter != vertextag2sideend[endtag].end() && "logic error");
+			vertextag2sideend[endtag].erase(eiter);
+			if (vertextag2sideend[endtag].size() == 0) {
+				remove(vertextag2sideend, endtag);
+			}
+		};
+
+		auto addSide = [&sidemap, &deleteSide, &vertextag2sidestart, &vertextag2sideend](const IndexedVertex &vertex0, const IndexedVertex &vertex1, int polygonindex, SideTag &addedtag)->bool {
+			auto starttag = vertex0.index;
+			auto endtag = vertex1.index;
+			assert(starttag != endtag && "logic error");
+			auto newsidetag = CSGJSCPP_MAKEPAIR(starttag, endtag);
+			auto reversesidetag = CSGJSCPP_MAKEPAIR(endtag, starttag);
+			if (contains(sidemap, reversesidetag)) {
+				// we have a matching reverse oriented side.
+				// Instead of adding the new side, cancel out the reverse side:
+				// console.log("addSide("+newsidetag+") has reverse side:");
+				deleteSide(vertex1, vertex0, kInvalidPolygonIndex);
+				return false;
+			}
+			//  console.log("addSide("+newsidetag+")");
+			Side newsideobj{ &vertex0, &vertex1, polygonindex };
+			sidemap[newsidetag].push_back(newsideobj);
+			vertextag2sidestart[starttag].push_back(newsidetag);
+			vertextag2sideend[endtag].push_back(newsidetag);
+			addedtag = newsidetag;
+			return true;
+		};
+
+        while (true) {
+			//todo outerscope has a sidemapisempty so renamed this just incase for now
+            bool sidemapisempty2 = true;
+            for (auto &iter :sidemap) {
+                const auto &sidetag = iter.first;
+                sidemapisempty2 = false;
+				sidestocheck.push_back(sidetag);
+            }
+            if (sidemapisempty2) {
+                break;
+            }
+            bool donesomething = false;
+            while (false == sidestocheck.empty()) {
+
+                SideTag sidetagtocheck = sidestocheck.front();
+				sidestocheck.pop_front();
+                //var sidetagtocheck = null;
+                //for (var sidetag in sidestocheck) {
+                //    sidetagtocheck = sidetag;
+                //    break;
+                //}
+                //if (sidetagtocheck == = null) break; // sidestocheck is empty, we're done!
+                bool donewithside = true;
+                if (contains(sidemap, sidetagtocheck)) {
+                    auto &sideobjs = sidemap[sidetagtocheck];
+                    assert(sideobjs.size() && "didn't expect an empty set of sides");
+                
+                    Side &side = sideobjs[0];
+                    for (int directionindex = 0; directionindex < 2; directionindex++) {
+                        auto startvertex = (directionindex == 0) ? side.vertex0 : side.vertex1;
+                        auto endvertex = (directionindex == 0) ? side.vertex1 : side.vertex0;
+                        auto startvertextag = startvertex->index;
+                        auto endvertextag = endvertex->index;
+                        CSGJSCPP_VECTOR<SideTag> matchingsides; //TODO - this is gonna be copied into, ok with that?
+                        if (directionindex == 0) {
+                            if (contains(vertextag2sideend, startvertextag)) {
+                                matchingsides = vertextag2sideend[startvertextag];
+                            }
+                        } else {
+                            if (contains(vertextag2sidestart, startvertextag)) {
+                                matchingsides = vertextag2sidestart[startvertextag];
+                            }
+                        }
+                        for (const auto &matchingsidetag: matchingsides) {
+                            
+                            auto matchingside = sidemap[matchingsidetag][0];
+                            auto matchingsidestartvertex = (directionindex == 0) ? matchingside.vertex0 : matchingside.vertex1;
+							auto matchingsidestartvertextag = matchingsidestartvertex->index;
+#if !defined(NDEBUG)
+							auto matchingsideendvertex = (directionindex == 0) ? matchingside.vertex1 : matchingside.vertex0;
+							auto matchingsideendvertextag = matchingsideendvertex->index;
+                            assert(matchingsideendvertextag == startvertextag && "logic error");
+#endif
+                            if (matchingsidestartvertextag == endvertextag) {
+                                // matchingside cancels sidetagtocheck
+                                deleteSide(*startvertex, *endvertex, kInvalidPolygonIndex);
+                                deleteSide(*endvertex, *startvertex, kInvalidPolygonIndex);
+                                donewithside = false;
+                                directionindex = 2; // skip reverse direction check
+                                donesomething = true;
+                                break;
+                            } else {
+                                auto startpos = startvertex->vertex.pos;
+                                auto endpos = endvertex->vertex.pos;
+                                auto checkpos = matchingsidestartvertex->vertex.pos;
+                                auto direction = checkpos - startpos;
+                                // Now we need to check if endpos is on the line startpos-checkpos:
+                                CSGJSCPP_REAL t = dot((endpos - startpos), direction) / dot(direction, direction);
+                                if ((t > 0.0f) && (t < 1.0f)) {
+                                    auto closestpoint = startpos + direction * t;
+                                    auto distancesquared = lengthsquared(closestpoint - endpos);
+                                    if (distancesquared < 1e-10) { //TODO - shouldn't this be epsilon constant?
+                                        // Yes it's a t-junction! We need to split matchingside in two:
+                                        auto polygonindex = matchingside.polygonindex;
+                                        auto polygon = polygons[polygonindex];
+                                        // find the index of startvertextag in polygon:
+										auto insertionvertextag = matchingside.vertex1->index;
+                                        int insertionvertextagindex = -1;
+                                        for (int i = 0; i < (int)polygon.vertexindex.size(); i++) {
+                                            if (polygon.vertexindex[i] == insertionvertextag) {
+                                                insertionvertextagindex = i;
+                                                break;
+                                            }
+                                        }
+                                        assert(insertionvertextagindex >= 0 && "logic error");
+                                        // split the side by inserting the vertex:
+										auto newvertices = polygon.vertexindex; //deliberate copy TODO, is it needed, we're just inserting a vertex!
+                                        newvertices.insert(newvertices.begin()+insertionvertextagindex, endvertex->index);
+										polygons[polygonindex].vertexindex = newvertices;
+
+                                        // remove the original sides from our maps:
+                                        // deleteSide(sideobj.vertex0, sideobj.vertex1, null);
+                                        deleteSide(*matchingside.vertex0, *matchingside.vertex1, polygonindex);
+										SideTag newsidetag1, newsidetag2;
+										if (addSide(*matchingside.vertex0, *endvertex, polygonindex, newsidetag1)) {
+											sidestocheck.push_back(newsidetag1);
+										}
+										if (addSide(*endvertex, *matchingside.vertex1, polygonindex, newsidetag2)) {
+											sidestocheck.push_back(newsidetag2);
+										}
+                                        donewithside = false;
+                                        directionindex = 2; // skip reverse direction check
+                                        donesomething = true;
+                                        break;
+                                    } // if(distancesquared < 1e-10)
+                                } // if( (t > 0) && (t < 1) )
+                            } // if(endingstidestartvertextag == endvertextag)
+                        } // for matchingsideindex
+                    } // for directionindex
+                } // if(sidetagtocheck in sidemap)
+                if (donewithside) {
+                    //delete sidestocheck[sidetag];
+                }
+            }
+            if (!donesomething){
+                break;
+            }
+        } // if(!sidemapisempty)
+    }
+
+	CSGJSCPP_VECTOR<Polygon> outpolys;
+	for (const auto &indexedpoly : polygons) {
+		Polygon p;
+		for (auto i : indexedpoly.vertexindex) {
+			p.vertices.push_back(uvertices[i].vertex);
+		}
+		assert(p.vertices.size() > 2 && "logic error");
+		p.plane = Plane(p.vertices[0].pos, p.vertices[1].pos, p.vertices[2].pos);
+		outpolys.push_back(p);
+	}
+    return outpolys;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 } // namespace csgjscpp
 
