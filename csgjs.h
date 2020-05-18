@@ -66,6 +66,10 @@
 #define CSGJSCPP_FIND_IF std::find_if
 #endif
 
+#if !defined (CSGJSCPP_INDEX)
+#define CSGJSCPP_INDEX uint32_t
+#endif
+
 namespace csgjscpp {
 
 // `CSG.Plane.EPSILON` is the tolerance used by `splitPolygon()` to decide if a
@@ -211,7 +215,7 @@ struct Polygon {
 
 struct Model {
 
-    using Index = uint32_t;
+    using Index = CSGJSCPP_INDEX;
 
     CSGJSCPP_VECTOR<Vertex> vertices;
     CSGJSCPP_VECTOR<Index>  indices;
