@@ -63,6 +63,41 @@ namespace exunit {
 		return false;
 	}
 
+	bool modeltostl(const char *filename, const Model &model) {
+
+		std::fstream stream(filename, std::ios_base::out);
+		if (stream.is_open()) {
+			char buffer[80] = {0};
+			stream.write(buffer, 80);
+			uint32_t size;
+			size = model.indices.size() / 3;
+			stream.write((char*)&size, sizeof(uint32_t));
+			for(size_t i = 0; i < model.indices.size(); i+=3){
+				size_t i0 = model.indices[i + 0];
+				size_t i1 = model.indices[i + 1];
+				size_t i2 = model.indices[i + 2];
+
+				auto norm = unit(cross(model.vertices[i2].pos - model.vertices[i0].pos, model.vertices[i1].pos - model.vertices[i0].pos));
+				stream.write((char*)&norm.x, sizeof(float));
+				stream.write((char*)&norm.y, sizeof(float));
+				stream.write((char*)&norm.z, sizeof(float));
+				stream.write((char*)&model.vertices[i0].pos.x, sizeof(float));
+				stream.write((char*)&model.vertices[i0].pos.y, sizeof(float));
+				stream.write((char*)&model.vertices[i0].pos.z, sizeof(float));
+				stream.write((char*)&model.vertices[i1].pos.x, sizeof(float));
+				stream.write((char*)&model.vertices[i1].pos.y, sizeof(float));
+				stream.write((char*)&model.vertices[i1].pos.z, sizeof(float));
+				stream.write((char*)&model.vertices[i2].pos.x, sizeof(float));
+				stream.write((char*)&model.vertices[i2].pos.y, sizeof(float));
+				stream.write((char*)&model.vertices[i2].pos.z, sizeof(float));
+				stream.write("\0\0", 2);
+			}
+			return true;
+		}
+
+		return false;
+	}
+
 	struct Timer {
 		Timer() {
 #if defined(WIN32)
